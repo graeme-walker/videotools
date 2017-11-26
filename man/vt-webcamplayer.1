@@ -1,0 +1,95 @@
+.\" Copyright (C) 2017 Graeme Walker
+.\" 
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\" Copyright Graeme Walker 2017
+.TH videotools 1 "" "" "User Commands"
+.SH NAME
+vt-webcamplayer \- displays or publishes video from a local webcam or video capture device
+.SH SYNOPSIS
+.B vt-webcamplayer 
+[\fIoptions\fR] 
+.SY vt-webcamplayer
+.OP \-\-verbose 
+.OP \-\-device device
+.OP \-\-caption 
+.OP \-\-caption-text text
+.OP \-\-viewer 
+.OP \-\-channel channel
+.OP \-\-scale divisor
+.OP \-\-tz hours
+.OP \-\-monochrome 
+.OP \-\-retry timeout
+.OP \-\-once 
+.YS
+.SH DESCRIPTION
+Displays or publishes video from a local webcam or video capture device.
+.PP
+If no publication channel is specified then the video is just displayed in 
+a window. The published video can be recorded by the `vt-recorder` program
+and later played back by `vt-fileplayer`, and it can be analysed by a 
+`vt-watcher`.
+.PP
+Use `--device=test` or `--device=demo` for testing without an attached 
+camera, or on linux use the "vivi" kernel module (`sudo modprobe vivi`).
+Device-specific configuration options can be added after the device
+name, using a semi-colon separator.
+.PP
+The program will normally poll for the webcam device to come on-line, although
+`--retry=0` can be used to disable this behaviour. When the device goes 
+off-line again the program will go back to polling, or it will terminate if the
+`--once` option is used.
+.PP
+The `--tz` option can be used with `--caption` to adjust the timezone for 
+the caption timestamp. It is typically a negative number for western 
+longitudes in order to show local time.
+.PP
+.PP
+The following command-line options can be used:
+.TP
+\fB\-\-verbose\fR
+verbose logging
+.TP
+\fB\-\-device\fR=\fIdevice
+video device (eg. /dev/video0)
+.TP
+\fB\-\-caption\fR
+add a timestamp caption
+.TP
+\fB\-\-caption-text\fR=\fItext
+defines the caption text in ascii, with %t for a timestamp
+.TP
+\fB\-\-viewer\fR
+run a viewer
+.TP
+\fB\-\-channel\fR=\fIchannel
+publish to the named channel
+.TP
+\fB\-\-scale\fR=\fIdivisor
+reduce the image size
+.TP
+\fB\-\-tz\fR=\fIhours
+timezone offset for the caption
+.TP
+\fB\-\-monochrome\fR
+convert to monochrome
+.TP
+\fB\-\-retry\fR=\fItimeout
+poll for the device to appear
+.TP
+\fB\-\-once\fR
+exit if the webcam device disappears
+.SH COPYRIGHT
+Copyright (c) Graeme Walker 2017 <graemewalker@sf.net>
+.PP
+This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.

@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style type="text/css">
+body {
+	background-color: white;
+}
+code {
+	background-color: #f1edf7;
+}
+pre code {
+	background-color: white;
+}
+pre {
+	background-color: white;
+	border: dotted;
+	border-width: 1px;
+	border-color: #7f7f7f ;
+	padding: 6px;
+}
+</style>
+</style>
+</head>
+<body>
+<h1>VideoTools</h1>
+
+<h2>What is it?</h2>
+
+<p>VideoTools is software for video surveillance that can record, analyse and
+replay images from webcams and network cameras. It runs on Linux and BSD
+Unix, and it is licensed as Open Source under the GPLv3.</p>
+
+<p>It can use direcly-attached webcams or network cameras that provide JPEG or
+H.264 video streams over HTTP or RTP.</p>
+
+<p>It is not suitable for entertainment or video conferencing applications
+because there is no audio or strict time synchronisation.</p>
+
+<p>VideoTools does some of the same things as "ZoneMinder" and other programs,
+so check them out too.</p>
+
+<h2>How does it work?</h2>
+
+<p>VideoTools is made up of several co-operating programs that communicate over
+the network or through shared-memory channels.</p>
+
+<p>The shared-memory publication channels are used for publishing video from
+one program to another running on the same machine. Each channel has one
+publisher but any number of subscribers, and once the publisher terminates
+the channel is deleted.</p>
+
+<p>The Linux kernel's "V4L" infrastructure is used to communicate with
+directly-attached webcams, and standard HTTP or RTSP/RTP protocols are used
+to communicate with network cameras. Network cameras must use JPEG or H.264
+encoding, and videotools uses the "libav" library to handle the H.264
+decoding.</p>
+
+<p>Simple motion detection works by looking for pixels that change by more than
+a set amount from one frame to the next, and then counting those pixels to
+see if they are more than some threshold number. Motion detection events can
+be used to control the recording process, or to raise alarms.</p>
+
+<p>Video streams are recorded to disk with separate files for each video frame,
+organised by date and time in a directory hierarchy.</p>
+
+<p>A single "viewer" program is used for displaying video in a window. Web 
+browsers can also be used for viewing video served up by the 
+<code>vt-httpserver</code> web server.</p>
+
+<h2>Hardware support</h2>
+
+<p>Hardware support for webcams on Linux is dependent on the V4L framework, and
+other websites should give you an idea whether your hardware will work with
+V4L. Using the "libv4l" shim library (<code>./configure --with-libv4l</code>) might help 
+with more obscure webcam data formats.</p>
+
+<p>Network cameras must use either HTTP or RTP. When using HTTP the camera
+must return one JPEG image for each HTTP GET, or generate a JPEG image stream 
+using the <code>multipart/x-mixed-replace</code> content type. When using RTP the camera 
+must return video images with JPEG or H.264 encoding.</p>
+
+<h2>Build and install</h2>
+
+<p>The system can be built and installed with the usual rubric:</p>
+
+<pre><code>./configure ; make ; sudo make install
+</code></pre>
+
+<p>Use your favourite package management tool (apt, pkg, or whatever) to install
+the following dependencies before running the <code>configure</code> script:</p>
+
+<ul>
+<li>libav</li>
+<li>libjpeg</li>
+<li>xlib</li>
+<li>libncurses</li>
+<li>libv4l</li>
+<li>v4l_compat (BSD)</li>
+<li>webcamd (BSD)</li>
+</ul>
+
+<p>On some BSD systems you will have to add <code>CPPFLAGS</code> and <code>LDFLAGS</code> options to the
+<code>configure</code> command to pick up the header files and libraries installed under
+<code>/usr/local</code> or <code>/opt</code>. Refer to the <code>INSTALL</code> file for more information, or
+just use the <code>configure.sh</code> script instead of <code>configure</code>.</p>
+
+<p>If there are missing dependencies the build will still go ahead but some
+features will not be available, so please look for warnings in the output
+from the <code>configure</code> script.</p>
+
+<p>The "start/stop" script, which is normally installed under <code>/etc/init.d</code> on
+Linux or <code>/usr/local/etc/rc.d</code> on BSD, can be used to start up the server
+processes, but you must edit its configuration file to tell it exactly what
+to run.</p>
+
+<p>On BSD systems enable the start/stop script by adding the following line to
+<code>/etc/rc.conf</code>:</p>
+
+<pre><code>videotools_enable="YES"
+</code></pre>
+
+<h2>Instructions for the impatient</h2>
+
+<ul>
+<li><p>Use <code>vt-httpclient</code> and <code>vt-webcamplayer</code> to obtain
+video from network cameras and webcams, and send each video stream to its own
+publication channel.</p></li>
+<li><p>Forward video streams across the network by running <code>vt-httpserver</code>
+on one side and <code>vt-httpclient</code> on the other. Use
+<code>--channel=&lt;channel&gt;</code> on the server's command-line and <code>vt://&lt;address&gt;</code>
+on the client's.</p></li>
+<li><p>Record video to disk by running <code>vt-recorder</code> for each channel.
+Use a different base directory for each channel, and give each recorder a
+control socket.</p></li>
+<li><p>Do motion detection for each channel using <code>vt-watcher</code>, and let each
+watcher control its channel's recorder via the recorder's control socket.</p></li>
+<li><p>Run <code>vt-fileplayer</code> to replay each channel's recordings to a playback
+channel. Give each fileplayer a control socket.</p></li>
+<li><p>Run a central <code>vt-httpserver</code> web server with <code>--channel=*</code> and
+<code>gateway=localhost</code> on the command-line.</p></li>
+<li><p>Use a web browser with URL paths like <code>_0</code>, <code>_1</code> etc. to view each channel,
+and add <code>?streaming=1</code> if your browser supports <code>multipart/x-mixed-replace</code>.
+Check out the example HTML code for HTML5 streaming techniques and
+user-interface ideas.</p></li>
+</ul>
+
+<h2>Getting started</h2>
+
+<p>Once the videotools system is installed you can try out some of the
+components by running them from a terminal.</p>
+
+<p>Start with the "fileplayer", and specify a directory that contains some
+static picture files:</p>
+
+<pre><code>vt-fileplayer --fade /usr/share
+</code></pre>
+
+<p>This should show all the images in succession and then stop. If running
+without X Windows then the output will use text characters as pixels filling
+the whole terminal, so stand back and squint, and use Control-C to quit.</p>
+
+<p>Then try the "webcamplayer" in its test mode:</p>
+
+<pre><code>vt-webcamplayer --device=test
+</code></pre>
+
+<p>This should show window with a test pattern of moving coloured bars.</p>
+
+<p>Next try viewing video from a webcam, or install the Linux "vivi" module if
+you do not have a webcam attached:</p>
+
+<pre><code>sudo modprobe vivi
+vt-webcamplayer --retry=0 --device=/dev/video0
+</code></pre>
+
+<p>You might need to try different device names (<code>/dev/video1</code> etc.) to find the
+webcam output. You will need root permissions to install the vivi module.</p>
+
+<p>Then try viewing the webcam video using a web browser. For this you will need
+to run the "webcamserver", listening on a free TCP port:</p>
+
+<pre><code>vt-webcamserver -v --port=8080 --device=/dev/video0
+</code></pre>
+
+<p>Tell your web browser to connect to the server by putting
+<code>http://127.0.0.1:8080</code> into the address bar. This should show a static image
+from the webcam.</p>
+
+<p>If your web browser supports the <code>multipart/x-mixed-replace</code> content type
+you can get moving video by adding <code>/?streaming=1</code> to the URL in the address 
+bar. Alternatively, add <code>--refresh=1</code> to the "webcamserver" command-line to 
+get a one second refresh:</p>
+
+<pre><code>vt-webcamserver -v --refresh=1 --port=8080 --device=/dev/video0
+</code></pre>
+
+<p>Next you can try viewing the output from a network camera, but you will need
+to know the full URL for getting JPEG images over HTTP, including any
+username and password. If you have this information then just run the
+"httpclient" program with the URL on the command-line, eg:</p>
+
+<pre><code>vt-httpclient -v --viewer http://admin:secret@192.168.0.3/streaming/channels/1/httppreview
+</code></pre>
+
+<p>Add the <code>--scale=3</code> option if the window is too big.</p>
+
+<p>Now try sending video to a publication channel. Use the "httpclient", if
+that worked, or use "webcamplayer". In either case add <code>--channel=camera</code>:</p>
+
+<pre><code>vt-httpclient --channel=camera http://...
+
+vt-webcamplayer --channel=camera --device=demo
+</code></pre>
+
+<p>View the channel using the "viewer" program:</p>
+
+<pre><code>vt-viewer camera
+</code></pre>
+
+<p>Try recording the video from the "camera" channel by running a "recorder",
+using <code>/tmp</code> as the base directory:</p>
+
+<pre><code>vt-recorder -v camera /tmp
+</code></pre>
+
+<p>Check for the recorded images under a sub-directory named after the current
+calendar year, and replay the recorded video with the "fileplayer":</p>
+
+<pre><code>find /tmp/20?? -type f
+vt-fileplayer --loop /tmp/20??
+</code></pre>
+
+<p>Make sure you kill the recorder before it has a chance to fill up your disk.</p>
+
+<p>Now try doing motion detection on the "camera" channel by running the
+"watcher" program:</p>
+
+<pre><code>vt-watcher -v --viewer camera
+</code></pre>
+
+<p>You should see a dim, monochrome image with bright green highlights where the
+image is changing.</p>
+
+<p>Create a mask file to define which regions of the image are used for motion
+detection. Run the "maskeditor" program using the "camera" channel to provide
+the base image:</p>
+
+<pre><code>vt-maskeditor --image-channel=camera /tmp/mask
+</code></pre>
+
+<p>Use the mouse to define the masked regions and close the window when you
+are done. The new mask file can now be used by the "watcher":</p>
+
+<pre><code>vt-watcher -v --viewer --mask=/tmp/mask camera
+</code></pre>
+
+<p>You should see the masked areas in dark red, and the motion detection
+spots in bright green.</p>
+
+<p>Finally, if you have a network camera that can send over RTP and you know its
+URL scheme, try using the "rtspclient" program to encourage it to transmit:</p>
+
+<pre><code>vt-rtscpclient -v rtsp://admin:secret@192.168.0.3:554/streaming/channels/1
+</code></pre>
+
+<p>While the "rtspclient" is still running check that you are getting RTP 
+packets on UDP port 8000 by using "netcat":</p>
+
+<pre><code>nc -l -u -4 0 8000 | base64
+</code></pre>
+
+<p>And then try viewing the RTP video stream using the "rtpserver":</p>
+
+<pre><code>vt-rtpserver -v --viewer --scale=auto --port=8000
+</code></pre>
+
+<h2>Configuration</h2>
+
+<p>The videotools system is normally configured through the system's <code>init</code>
+system. For each videotools process that you want to run you should construct
+a complete command-line containing all the relevant command-line options.
+The options available for each videotools program are described in its <code>man</code>
+page.</p>
+
+<p>For traditional script-based <code>init</code> systems a videotools start/stop script is
+installed as <code>/etc/init.d/videotools</code> on Linux, and this reads a configuration 
+file <code>/etc/videotools</code> containing the list of "run" command-lines. Optional
+overrides for directory paths etc. are taken from a file
+<code>/etc/defaults/videotools</code>.</p>
+
+<p>On BSD systems the relevant files are <code>/etc/rc.d/videotools</code>,
+<code>/etc/videotools</code> and <code>/etc/rc.conf.d/videotools</code>, but possibly under
+<code>/usr/local</code> or <code>/opt</code>.</p>
+
+<p>As an example, consider a machine with just one webcam that needs to run a
+"webcamserver" to capture the video from the webcam and serve it up over
+HTTP. Its configuration file would have one "run" line, like this:</p>
+
+<pre><code># one webcam serving up jpeg video over http on port 80
+run vt-webcamserver --port 80 /dev/video0
+</code></pre>
+
+<p>A central file-server machine doing recording, motion detection and
+web-serving might look more like this:</p>
+
+<pre><code># read from network camera "front" using h.264 encoding over rtp
+run vt-rtspclient --port=8000 --format-file=$RUNDIR/camera.cfg  rtsp://admin:secret@192.168.0.2/streaming/channels/1
+run vt-rtpserver --port=8000 --format-file=$RUNDIR/camera.cfg --scale=auto --channel=front
+
+# read from network camera "rear" using jpeg encoding over http
+run vt-httpclient --channel=rear http://192.168.0.3/streaming/channels/2
+
+# read from remote webcam "inside" by talking to its webcamserver
+run vt-httpclient --channel=inside vt://rpi.localnet:80
+
+# record the three video streams to disk
+run vt-recorder --command-socket=$RUNDIR/front.s front $SHAREDIR/front
+run vt-recorder --command-socket=$RUNDIR/rear.s rear $SHAREDIR/rear
+run vt-recorder --command-socket=$RUNDIR/inside.s inside $SHAREDIR/inside
+
+# motion detection, controlling the recorders
+run vt-watcher --recorder=$RUNDIR/front.s --event-channel=front-events front
+run vt-watcher --recorder=$RUNDIR/rear.s --event-channel=rear-events rear
+run vt-watcher --recorder=$RUNDIR/inside.s --event-channel=inside-events inside
+
+# alarms from motion detection events
+run vt-alarm front-events /usr/bin/aplay /usr/share/sounds/dog.wav
+run vt-alarm rear-events /usr/local/bin/my-alarm.sh
+run vt-alarm inside-events /usr/bin/wall
+
+# file players, for replaying recordings
+run vt-fileplayer --channel=front-replay --command-socket=udp://0:3001 $SHAREDIR/front
+run vt-fileplayer --channel=rear-replay --command-socket=udp://0:3002 $SHAREDIR/rear
+run vt-fileplayer --channel=inside-replay --command-socket=udp://0:3003 $SHAREDIR/inside
+
+# main web server, to allow viewing from a html5 web-browser
+run vt-httpserver --gateway=localhost --port=8080 --dir=$SHAREDIR --channel=*
+</code></pre>
+
+<h2>Viewing</h2>
+
+<p>The video passing through a channel can be viewed by simply running the
+"viewer" program on the same machine as the channel.</p>
+
+<pre><code>vt-viewer somechannel
+</code></pre>
+
+<p>Make sure you are using an account that has permission to access the
+channel's shared memory.</p>
+
+<p>If X-Windows is not available then the viewer program will try to display
+the images in text mode, using characters as pixels.</p>
+
+<p>To view the video images from a channel on another machine you should use
+<code>ssh -X</code> (or <code>ssh -Y</code> from MacOS).</p>
+
+<pre><code>ssh -X somebox.localnet vt-viewer somechannel
+</code></pre>
+
+<p>The "httpserver" program can also be used to serve up video from a channel,
+so that it can be viewed using a web browser.</p>
+
+<p>Snapshot images can be extracted from a channel by using the "channel"
+utility and then viewed with a graphics program, perhaps after using
+ImageMagick tools to change the image format.</p>
+
+<pre><code>vt-channel --out=temp.dat read somechannel
+convert temp.dat temp.jpg
+gimp temp.jpg
+</code></pre>
+
+<h2>Recording and playback</h2>
+
+<p>The "recorder" program is used to record video from a publication channel.</p>
+
+<p>For example, to record from the "camera1" channel to a directory tree under
+<code>/data/video</code>, start up a recorder like this:</p>
+
+<pre><code>vt-recorder camera1 /data/video/camera1
+</code></pre>
+
+<p>The "fileplayer" program can be used to play back the recordings for a
+particular date:</p>
+
+<pre><code>vt-fileplayer /data/video/camera1/2017/12/31
+</code></pre>
+
+<h2>Motion detection</h2>
+
+<p>The "watcher" program can be used for motion detection. It monitors video
+from one channel and emits motion detection events on another.</p>
+
+<p>The "alarm" program can be used to react to the motion detection events,
+perhaps by playing a sound or sending an email.</p>
+
+<pre><code>vt-watcher --channel=camera1-events camera1
+vt-alarm camera1-events aplay alarm.wav
+</code></pre>
+
+<p>You will normally need a mask file to inhibit motion detection in certain
+parts of the video image.</p>
+
+<pre><code>vt-maskeditor --image-channel=camera1 camera1-mask.pbm
+vt-watcher --mask=camera1-mask.pbm --viewer --event-channel=camera1-events camera1
+</code></pre>
+
+<p>The watcher can control the recorder by using the recorder's
+<code>--command-socket</code> option. Motion detection will then cause the recorder to
+start recording in its "fast" mode.</p>
+
+<pre><code>vt-recorder --command-socket=/var/run/recorder1.s --state=stopped --timeout=20 camera1 /data/video/camera1
+vt-watcher --recorder=/var/run/recorder1.s camera1
+</code></pre>
+
+<p>There are two main parameters for the motion detection algorithm: "squelch"
+and "threshold". Refer to the "watcher" documentation for the details.</p>
+
+<h2>Security and privacy</h2>
+
+<p>Always use firewalls and encrypted tunnels to protect your privacy when
+exposed to the public internet. Also consider the following points.</p>
+
+<ul>
+<li><p>Use the <code>--address</code> option to restrict the listening ports to a single
+network interface.</p></li>
+<li><p>Note that usernames and passwords in URLs on the command-line will be widely
+visible on the local machine using <code>ps</code>.</p></li>
+<li><p>Operating system resources such as files (excluding pid files), directories,
+local-domain sockets, shared memory segments, semaphores etc. are all created
+with permissions restricted by the inherited "umask", so make sure that the
+umask in the videotools startup script (or equivalent) is set
+appropriately.</p></li>
+<li><p>Consider creating a special user group to control access to the videotools
+resources more precisely: create a new group and make all the videotools
+executables group-suid (for example), and then add user accounts to the group
+in order to grant access to the videotools resources. Note that the <code>--user</code>
+option does not affect resource ownership, although it can indirectly affect
+the ownership of files created by an external program run by
+<code>vt-alarm</code>.</p></li>
+<li><p>Local-domain sockets are created whenever a program subscribes to a
+publication channel and these sockets are briefly bound to a filesystem
+path of <code>/tmp/vt-&lt;channel&gt;.&lt;pid&gt;</code>. However, they can be put in a
+more private directory by prefixing the channel name on the subscriber's side
+using an extended format of <code>&lt;dir&gt;/&lt;name&gt;/&lt;channel&gt;</code>, to give socket paths
+of <code>&lt;dir&gt;/&lt;name&gt;.&lt;pid&gt;</code>.</p></li>
+<li><p>The <code>vt-alarm</code> program uses the <code>system()</code> function to execute the program
+you specify on the command-line. This provides a lot of flexibility for
+output redirection, back-ticks, environment variable substitution etc, but
+it also presents a large attack surface if the program's configuration or
+run-time environment is compromised.</p></li>
+</ul>
+
+<h2>IPv6</h2>
+
+<p>IPv6 is used whenever an address uses an IPv6 format or whenever a hostname
+resolves to an IPv6 address.</p>
+
+<p>Programs that use the <code>--port</code> option for the port number also have an
+<code>--address</code> option for the network address, so adding <code>--address=::</code> will
+switch from IPv4 to IPv6 since "::" is the IPv6 wildcard address. Similarly
+for programs with a <code>--command-socket</code> option the full IPv6 transport address
+can be given, so for example using <code>--command-socket=:::9000</code> will switch
+the socket to IPv6 port 9000.</p>
+
+<p>IPv6 addresses can be used in URLs (eg. <code>vt-httpclient http://::1:80/x</code>),
+but they will generally also need square brackets to avoid ambiguity with
+respect to port numbers, eg.  <code>http://[fc00::1]/x</code>.</p>
+
+<p>For hostnames that can resolve to IPv4 or IPv6 addresses the first returned
+address is used. (Refer to <code>getaddrinfo()</code>'s <code>AI_ADDRCONFIG</code> option for more
+details.)</p>
+
+<p>RTP multicast features are only relevant to IPv4.</p>
+
+<h2>Connections</h2>
+
+<p>When videotools processes start up they usually wait for their primary inputs
+to become available, whether that's a webcam device, publication channel, or
+network peer; and if that input subsequently disappears then they will go
+back to a waiting state. This means that a set of co-operating processes can
+be started up without worrying about the order in which they connect to each
+other, and it makes is easy to restart individual components without restarting
+the whole videotools system.</p>
+
+<p>However, this default behaviour can be modified by <code>--retry</code> and <code>--once</code>
+command-line options: if <code>--retry=0</code> is used then the program will exit
+immediately if the input resource is not available, and if <code>--once</code> is used 
+then then any disappearance of a previously active input causes the program to 
+exit. These options might be useful if the videotools processes are being 
+managed by an "init" system that knows about their resource dependencies, or 
+if they are operating in a stable, low-maintenance system where failing fast 
+might be desirable.</p>
+
+<p>The connectivity of an established set of local videotools processes can be
+deduced from metadata held within publication channels. Each channel has a
+small structure describing the publisher process and a set of "slot" 
+structures where the channel subscribers register themselves.</p>
+
+<p>Channel metadata can be seen by using the "channel" utility:</p>
+
+<pre><code>vt-channel -q list | xargs -n1 vt-channel info
+</code></pre>
+
+<p>The "httpserver" program can also make the channel metadata available across 
+the network via the special double-underscore url path ("__"):</p>
+
+<pre><code>vt-httpserver --port=8080 --channel=\*
+wget -q http://localhost:8080/__ -O channels.json
+</code></pre>
+
+<h2>Troubleshooting</h2>
+
+<p>If you encounter problems then stop all the videotools processes, and then
+run only the relevant videotools program from the command-line. Use the the
+<code>--verbose</code> option to get extra log messages, and do not use the <code>--daemon</code>
+option. If the problems seem to be related to permissions then run your
+tests as "root" by using <code>sudo</code> or equivalent.</p>
+
+<p>Add the <code>--scale</code> option wherever possible to reduce the image sizes during
+your tests. This is particularly important if you see dropped RTP packets or
+corrupted H.264 video from the "rtpserver".</p>
+
+<p>Work through the "Getting started" section (above) and vary the steps to get
+closer to the problem you are seeing.</p>
+
+<p>Program aborts can cause publication channels to become congested or invalid
+in some way. Use the "channel" utility to purge or delete them. As a last
+resort carefully remove files from the <code>/dev/shm</code> directory (Linux only and
+at your own risk), or reboot.</p>
+
+<pre><code>vt-channel list
+vt-channel purge somechannel
+vt-channel delete somechannel
+</code></pre>
+
+<p>Problems with USB webcams can sometimes be resolved by unplugging them and
+the plugged them back in, particularly if you get weird errors on startup.</p>
+
+<p>Wireshark can be useful for diagnosing network problems and for figuring out
+the capabilities of network cameras; the <code>Analyze-&gt;FollowTcpStream</code> option
+can be particularly productive for HTTP.</p>
+
+<p>The "vlc" media player is useful for experimenting with RTSP/RTP.</p>
+
+<p>If you have corruped webcam images then experiment with adding <code>;fmt=x</code> to
+the device name, where x is a small integer, eg. <code>/dev/video0;fmt=10</code>. (Use
+a backslash or single-quotes to protect the semi-colon.) Also try building
+with and without "libv4l".</p>
+
+<p>If JPEG video over RTP looks really bad then try using the "rtpserver"
+program's <code>--jpeg-table</code> option.</p>
+
+<h2>Programs</h2>
+
+<p>The following sections describe the videotools programs in more detail.</p>
+
+<h2>Program vt-alarm</h2>
+
+<p>Monitors a watcher's output channel and runs an external command on 
+each motion-detection event.</p>
+
+<p>For example, an "alarm" process can be used to generate an alarm sound 
+when motion detection is triggered, by running an external command 
+like "aplay".</p>
+
+<p>If the <code>--run-as</code> option is given then the external command runs with
+that account's user-id and group-id if possible.</p>
+
+<h3>Usage</h3>
+
+<pre><code>vt-alarm [&lt;options&gt;] &lt;event-channel&gt; [&lt;command&gt; [&lt;arg&gt; ...]]
+</code></pre>
+
+<h3>Options</h3>
+
+<pre><code>--verbose             verbose logging
+--threshold=&lt;pixels&gt;  alarm threshold in pixels per image
+</code></pre>
+
+<h2>Program vt-channel</h2>
+
+<p>A tool for working with publication channels.</p>
+
+<p>The following sub-commands are available: "list" lists all local
+publication channels; "info" displays diagnostic information for 
+the channel; "read" reads one message from the channel; "peek"
+reads the last-available message from the channel without
+waiting; "purge" clears subscriber slots if subscribers have 
+failed without cleaning up; and "delete" deletes the channel,
+in case a publisher fails without cleaning up.</p>
+
+<h3>Usage</h3>
+
+<pre><code>vt-channel [&lt;options&gt;] {list|info|purge|delete|peek|read} &lt;channel&gt;
+</code></pre>
+
+<h3>Options</h3>
+
+<pre><code>--all             include info for unused slots
+--out=&lt;filename&gt;  output filename
+--quiet           fewer warnings
+</code></pre>
+
+<h2>Program vt-maskeditor</h2>
+
+<p>Creates and edits a mask file that can be used by the <code>vt-watcher</code> program.</p>
+
+<p>The <code>vt-watcher</code> program analyses a video stream for moving objects, and it uses
+a mask file to tell it what parts of the image to ignore.</p>
+
+<p>The mask is edited over the top a background image, and that image can come 
+from a static image file or from a publication channel (<code>--image-channel</code>).</p>
+
+<p>Click and drag the mouse to create masked areas, and hold the shift key to
+revert. The mask file is continuously updated in-place; there is no "save" 
+operation.</p>
+
+<h3>Usage</h3>
+
+<pre><code>vt-maskeditor [&lt;options&gt;] &lt;mask-file&gt;
+</code></pre>
+
+<h3>Options</h3>
+
+<pre><code>--verbose                   verbose logging
+--image-file=&lt;path&gt;         background image file
+--image-channel=&lt;channel&gt;   channel for capturing the initial backgound image
+--viewer-channel=&lt;channel&gt;  override the default viewer channel name
+</code></pre>
+
+<h2>Program vt-fileplayer</h2>
+
+<p>Plays back recorded video to a publication channel or into a viewer window.</p>
+
+<p>The directory specified on the command-line is a base directory where the 
+video images can be found. </p>
+
+<p>The base directory can also be specified using the <code>--root</code> option, in which 
+case the directory on the end of the command-line is just the starting point
+for the playback. If the <code>--rerootable</code> and <code>--command-socket</code> options are
+used then the root directory can be changed at run-time by sending an
+appropriate <code>move</code> command.</p>
+
+<p>In interactive mode (<code>--interactive</code>) the ribbon displayed at the bottom of 
+the viewer window can be used to move forwards and backwards through the 
+day's recording. Click on the ribbon to move within the current day, or click
+on the left of the main image to go back to the previous day, or on the right
+to go forwards to the next.</p>
+
+<p>The <code>--skip</code> option controls what proportion of images are skipped during
+playback (speeding it up), and the <code>--sleep</code> option can be used to add a 
+delay between each displayed image (slowing it down). A negative skip value
+puts the player into reverse.</p>
+
+<p>A socket interface (<code>--command-socket</code>) can be used to allow another program
+to control the video playback. Sockets can be local-domain unix sockets or 
+UDP sockets; for UDP the socket should be like <code>udp://&lt;address&gt;:&lt;port&gt;</code>, eg. 
+<code>udp://0:20001</code>. </p>
+
+<p>Command messages are text datagrams in the form of a command-line, with 
+commands including <code>play</code>, <code>move {first|last|next|previous|.|&lt;full-path&gt;}</code>, 
+<code>ribbon &lt;xpos&gt;</code> and <code>stop</code>. The play command can have options of <code>--sleep=&lt;ms&gt;</code>, 
+<code>--skip=&lt;count&gt;</code>, <code>--forwards</code> and <code>--backwards</code>. The <code>move</code> command can 
+have options of <code>--match-name=&lt;name&gt;</code> and <code>--root=&lt;root&gt;</code>, although
+the <code>--root</code> option requires <code>--rerootable</code> on the program command-line.
+Multiple commands in one datagram should be separated by a semi-colon.</p>
+
+<p>The timezone option (<code>--tz</code>) affects the ribbon at the bottom of the display 
+window so that that the marks on the ribbon can span a local calendar day 
+even with UTC recordings. It also changes the start time for each new day 
+when navigating one day at a time. A positive timezone is typically used for
+UTC recordings viewed at western longitudes.</p>
+
+<p>If multiple recorders are using the same file store with different filename
+prefixes then the <code>--match-name</code> option can be used to disentangle the
+different recorder streams. The match name can be changed at run-time by
+using the <code>--match-name</code> option on a <code>move</code> command sent to the command 
+socket.</p>
+
+<h3>Usage</h3>
+
+<pre><code>vt-fileplayer [&lt;options&gt;] &lt;directory&gt;
+</code></pre>
+
+<h3>Options</h3>
+
+<pre><code>--verbose                   verbose logging
+--viewer                    run a viewer
+--interactive               respond to viewer mouse events
+--viewer-channel=&lt;channel&gt;  override the default viewer channel name
+--channel=&lt;channel&gt;         publish the playback video to the named channel
+--sleep=&lt;ms&gt;                inter-frame delay time for slower playback
+--skip=&lt;count&gt;              file skip factor for faster playback
+--command-socket=&lt;path&gt;     socket for playback commands
+--root=&lt;path&gt;               base directory
+--rerootable                allow the root to be changed over the command-socket
+--stopped                   begin in the stopped state
+--loop                      loop back to the beginning when reaching the end
+--scale=&lt;divisor&gt;           reduce the image size
+--tz=&lt;hours&gt;                timezone offset for ribbon
+--match-name=&lt;prefix&gt;       prefix for matching image files
+--monochrome                convert to monochrome
+--width=&lt;pixels&gt;            output image width
+--height=&lt;pixels&gt;           output image height
+--fade                      fade image transitions
+</code></pre>
+
+<h2>Program vt-httpclient</h2>
+
+<p>Pulls video from a remote HTTP server or network camera and sends it to a 
+publication channel or a viewer window.</p>
+
+<p>Uses repeated GET requests on a persistent connection, with each GET request
+separated by a configurable time delay (<code>--request-timeout</code>). A watchdog 
+timer tears down the connection if no data is received for some time and 
+then the connection is retried. Watchdog timeouts and peer disconnections 
+result in connection retries; connection failures will terminate the 
+program only if using <code>--retry=0</code>.</p>
+
+<p>The server should normally return a mime type of <code>image/jpeg</code>, or 
+preferably <code>multipart/x-mixed-replace</code> with <code>image/jpeg</code> sub-parts.
+In the latter case the client only needs to make one GET request and
+the server determines the frame rate.</p>
+
+<p>When getting video from a network camera the exact form of the URL to use 
+will depend on the camera, so please refer to its documentation or
+search the internet for help.</p>
+
+<p>To get video from a remote webcam use the <code>vt-webcamserver</code> on the remote
+maching and use <code>vt-httpclient</code> to pull it across the network.</p>
+
+<p>As a convenience, a URL of <code>vt://&lt;address&gt;</code> can be used instead of <code>http://&lt;address&gt;</code>
+and this is equivalent to <code>http://&lt;address&gt;/_?streaming=1&amp;type=any</code>.</p>
+
+<h3>Usage</h3>
+
+<pre><code>vt-httpclient [&lt;options&gt;] &lt;http-url&gt;
+</code></pre>
+
+<h3>Options</h3>
+
+<pre><code>--verbose                       verbose logging
+--viewer                        run a viewer
+--scale=&lt;divisor&gt;               reduce the viewer image size
+--viewer-title=&lt;title&gt;          viewer window title
+--watchdog-timeout=&lt;seconds&gt;    watchdog timeout (default 20s)
+--request-timeout=&lt;ms&gt;          time between http get requests (default 1ms)
+--channel=&lt;channel&gt;             publish to the named channel
+--connection-timeout=&lt;seconds&gt;  connection timeout
+--retry=&lt;seconds&gt;               retry failed connections or zero to exit (default 1s)
+--once                          exit when the first connection closes
+</code></pre>
+
+<h2>Program vt-httpserver</h2>
+
+<p>Reads video from one or more publication channels and makes it available 
+over the network using HTTP.</p>
+
+<p>The HTTP client can either request individual images ("client-pull") or
+receive a continuous JPEG video stream delivered as a 
+<code>multipart/x-mixed-replace</code> content type ("server-push").</p>
+
+<p>For server-push add a <code>streaming=1</code> parameter to the URL, eg. 
+<code>http://localhost:80/?streaming=1</code>. This should always be used when the 
+client is the <code>vt-httpclient</code> program, but be careful when using a browser 
+because not all of them support <code>multipart/x-mixed-replace</code>, and some of 
+them go beserk with "save-as" dialog boxes.</p>
+
+<p>The client-pull model works best with a browser that uses JavaScript code
+to generate a continuous stream of GET requests, typically using the 
+"Fetch" API.</p>
+
+<p>For browsers that do not have JavaScript or support for <code>multipart/x-mixed-replace</code>
+a <code>refresh=1</code> URL parameter can be used so that the server sends
+back static images with a HTTP "Refresh" header, causing the browser to 
+repeat the GET requests at intervals. This can also be made the default
+behaviour using the <code>--refresh</code> command-line option on the server.</p>
+
+<p>A <code>scale</code> URL parameter can be used to reduce the size of the images, and
+a <code>type</code> parameter can be used to request an image format (<code>jpeg</code>, <code>pnm</code>, or
+<code>raw</code>, with <code>jpeg</code> as the default). The type can also be <code>any</code>, which means 
+that no image conversion or validation is performed; whatever data is 
+currently in the publication channel is served up.</p>
+
+<p>Static files can be served up by using the <code>--dir</code> option. Normally any file
+in the directory will be served up, but a restricted set of files can be 
+specified by using the <code>--file</code> option. The <code>--file-type</code> option can be used
+to give the files' content-type, by using the filename and the content-type 
+separated by a colon, eg. <code>--file-type=data.json:application/json</code>. The default 
+file that is served up for an empty path in the url can be modified by the 
+<code>--default</code> option, eg. <code>--default=main.html</code>.</p>
+
+<p>One or more channel names should normally be specified on the command-line
+using the <code>--channel</code> option. Clients can select a channel by name by
+using URL paths with an underscore prefix (eg. <code>_foo</code>, <code>_bar</code>); or by index 
+by using URL paths like <code>_0</code>, <code>_1</code>, etc. </p>
+
+<p>If <code>--channel=*</code> is specified then any valid channel name can be used in 
+the URL path. This also enables the special <code>/__</code> url that returns channel 
+information as a JSON structure.</p>
+
+<p>The <code>--gateway=&lt;host&gt;</code> option can be used to integrate static web pages
+with UDP command sockets; HTTP requests with a <code>send</code> parameter of the
+form <code>&lt;port&gt; &lt;message&gt;</code> are sent as UDP messages to the <code>--gateway</code> IP 
+address and the specified port.</p>
+
+<h3>Usage</h3>
+
+<pre><code>vt-httpserver [&lt;options&gt;]
+</code></pre>
+
+<h3>Options</h3>
+
+<pre><code>--port=&lt;port&gt;                 listening port
+--timeout=&lt;seconds&gt;           network idle timeout (default 60s)
+--data-timeout=&lt;seconds&gt;      initial image timeout (default 3s)
+--repeat-timeout=&lt;ms&gt;         image repeat timeout (default 1000ms)
+--address=&lt;ip&gt;                listening address
+--dir=&lt;dir&gt;                   serve up static files
+--file=&lt;filename&gt;             allow serving the named file 
+--file-type=&lt;fname:type&gt;      define the content-type of the the named file 
+--default=&lt;fname-or-channel&gt;  define the default resource
+--channel=&lt;name&gt;              serve up named video channel
+--gateway=&lt;udp-host&gt;          act as a http-post-to-udp-command-line gateway
+--refresh=&lt;seconds&gt;           add a refresh header to http responses by default
+</code></pre>
+
+<h2>Program vt-recorder</h2>
+
+<p>Reads a video stream from a publication channel and records it to disk.</p>
+
+<p>Individual video frames are stored in a directory tree, organised by date
+and time.</p>
+
+<p>Images are recorded as fast as they are received, or once a second, or not 
+at all. These are the fast, slow and stopped states.</p>
+
+<p>The state can be changed by sending a <code>fast</code>, <code>slow</code>, or <code>stopped</code> command 
+over the recorder's command socket (<code>--command-socket</code>).</p>
+
+<p>The fast state is temporary unless the <code>--timeout</code> option is set to zero; 
+after recording in the fast state for a while the state drops back to the 
+previous slow or stopped state. </p>
+
+<p>The recorder enters the fast state on startup (<code>--fast</code>) or when it gets a 
+<code>fast</code> command over its command socket, typically sent by the <code>vt-watcher</code> 
+program. On entering the fast state any in-memory images from the last few
+seconds are also committed to disk.</p>
+
+<p>A sub-directory called <code>.cache</code> is used to hold the recent images that have 
+not been commited to the main image store. These files are held open, and 
+they should not be accessed externally. When the recorder is triggered
+by a <code>fast</code> command on the command socket the cached files are moved
+into the main image store so that they provide a lead-in to the event
+that triggered the recording.</p>
+
+<p>On machines with limited memory the cache size should be tuned so that
+there is no disk activity when the recorder is in the "stopped" state.
+The cache can be completely disabled by setting the cache size to zero, 
+but then there will be no lead-in to recordings triggered by an event.</p>
+
+<p>Use <code>--fast --timeout=0 --cache-size=0</code> for continuous recording of a 
+channel.</p>
+
+<p>The <code>--tz</code> option is the number of hours added to UTC when constructing
+file system paths under the base directory, so to get local times at western
+longitudes the value should be negative (eg. <code>--tz=-5</code>). However, if this 
+option is used inconsistently then there is a risk of overwriting or 
+corrupting old recordings, so it is safer to use UTC recordings and 
+add <code>--tz</code> adjustments elsewhere.</p>
+
+<p>Loopback filesystems are one way to put a hard limit on disk usage. On 
+Linux do something like this as root 
+<code>dd if=/dev/zero of=/usr/share/recordings.img count=20000</code>,
+<code>mkfs -t ext2 -F /usr/share/recordings.img</code>, 
+<code>mkdir /usr/share/recordings</code>,
+<code>mount -o loop /usr/share/recordings.img /usr/share/recordings</code>,
+add add the mount to <code>/etc/fstab</code>.</p>
+
+<p>Individual video streams should normally be recorded into their own directory
+tree, but the <code>--name</code> option allows multiple video streams to share the same
+root directory by adding a fixed prefix to every image filename. However,
+this approach does not scale well on playback, so only use it for a very
+small number of video streams.</p>
+
+<h3>Usage</h3>
+
+<pre><code>vt-recorder [&lt;options&gt;] &lt;input-channel&gt; &lt;base-dir&gt;
+</code></pre>
+
+<h3>Options</h3>
+
+<pre><code>--verbose                verbose logging
+--scale=&lt;divisor&gt;        reduce the image size
+--command-socket=&lt;path&gt;  socket for commands
+--file-type=&lt;type&gt;       file format: jpg, ppm, or pgm
+--timeout=&lt;s&gt;            fast-state timeout
+--fast                   start in fast state
+--state=&lt;state&gt;          state when not fast (slow or stopped, slow by default)
+--tz=&lt;hours&gt;             timezone offset
+--cache-size=&lt;files&gt;     cache size
+--name=&lt;prefix&gt;          prefix for all image files (defaults to the channel name)
+--retry=&lt;timeout&gt;        poll for the input channel to appear
+--once                   exit if the input channel disappears
+</code></pre>
+
+<h2>Program vt-rtpserver</h2>
+
+<p>Listens for an incoming RTP video stream and sends it to a local publication 
+channel. </p>
+
+<p>Some network cameras use RTP rather than HTTP because it is more suited to 
+high resolution video, especially when using H.264 encoding, and it also 
+allows for IP multicasting.</p>
+
+<p>Only the "H264/90000" and "JPEG/90000" RTP payload types are supported by this
+server. </p>
+
+<p>The H.264 video format requires plenty of processing power; if the H.264 
+decoding is too slow then packets will be missed and the packet stream
+will have too many holes to decode anything. The processing load can 
+be reduced by handling only RTP packets that match certain criteria by 
+using the <code>--filter</code> option, or by using <code>--scale</code> and <code>--monochrome</code>
+to reduce the image resolution after decoding.</p>
+
+<p>Cameras that use RTP will normally be controlled by an RTSP client (such as
+<code>vt-rtspclient</code>); the RTSP client asks the camera to start sending
+its video stream to the address that the RTP server is listening on.</p>
+
+<p>The camera responds to the RTSP request with a "fmtp" string, which describes
+the video format for the H.264 video packets. If this information is not
+available from within the RTP packet stream itself then it can be passed 
+to the rtpserver using the <code>--format-file</code> option.</p>
+
+<p>The RTCP protocol is not currently used so the rtpserver only opens one
+UDP port for listening, not two. Also be aware that if two rtpservers
+are listening on the same UDP port then they will steal packets from
+one another and it is likely that both will stop working.</p>
+
+<h3>Usage</h3>
+
+<pre><code>vt-rtpserver [&lt;options&gt;]
+</code></pre>
+
+<h3>Options</h3>
+
+<pre><code>--verbose              verbose logging
+--viewer               run a viewer
+--scale=&lt;divisor&gt;      reduce the image size (or 'auto')
+--monochrome           convert to monochrome
+--port=&lt;port&gt;          listening port
+--channel=&lt;channel&gt;    publish to the named channel
+--address=&lt;ip&gt;         listening address
+--multicast=&lt;address&gt;  multicast group address
+--format-file=&lt;path&gt;   file to read for the H264 format parameters
+--type=&lt;type&gt;          process packets of one rtp payload type (eg. 26 or 96)
+--jpeg-table=&lt;ff&gt;      tweak for jpeg quantisation tables (0,1 or 2)
+</code></pre>
+
+<h2>Program vt-rtspclient</h2>
+
+<p>Issues RTSP commands to control network cameras that send out their video 
+over RTP with H.264 encoding (RTP/AVP).</p>
+
+<p>The RTSP protocol acts as a "remote control" for video devices, so an RTSP
+client is used to ask a camera to send its RTP video stream back to a 
+particular pair of UDP ports where the RTP server is listening.</p>
+
+<p>The RTSP client also reports on what video format the camera will send, 
+encoded as a "fmtp" string. This information can help the RTP server 
+decode the video stream. Use the <code>--format-file</code> option to make it
+available to the RTP server.</p>
+
+<p>The RTSP protocol is similar to HTTP, and it uses the same URL syntax, with
+<code>rtsp://</code> instead of <code>http://</code> , eg. <code>rtsp://example.com/channel/1</code>. The 
+format of right hand side of the URL, following the network address, will 
+depend on the camera, so refer to its documentation.</p>
+
+<p>The camera should send its video stream for as long as the <code>vt-rtspclient</code>
+program keeps its session open; once it terminates then the video stream from
+the camera will stop.</p>
+
+<h3>Usage</h3>
+
+<pre><code>vt-rtspclient [&lt;options&gt;] &lt;rtsp-url&gt;
+</code></pre>
+
+<h3>Options</h3>
+
+<pre><code>--verbose                       verbose logging
+--port=&lt;port-port&gt;              listening port range eg. 8000-8001
+--multicast=&lt;address&gt;           multicast address eg. 224.1.1.1
+--format-file=&lt;path&gt;            a file to use for storing the video format string
+--connection-timeout=&lt;seconds&gt;  connection timeout
+--retry=&lt;seconds&gt;               retry failed connections or zero to exit (default 1s)
+--once                          exit when the first session closes
+</code></pre>
+
+<h2>Program vt-socket</h2>
+
+<p>Sends a command string to a local-domain or UDP socket. </p>
+
+<p>This can be used with the <code>vt-fileplayer</code> and <code>vt-recorder</code> programs when using 
+their <code>--command-socket</code> option.</p>
+
+<p>The socket is a local-domain socket by default, but a UDP network socket 
+if the socket name looks like a transport address or if it starts 
+with <code>udp://</code>.</p>
+
+<p>The standard "netcat" utility (<code>nc</code>) can also be used to send messages to
+UDP and local-domain sockets.</p>
+
+<h3>Usage</h3>
+
+<pre><code>vt-socket &lt;socket&gt; &lt;command-word&gt; [&lt;command-word&gt; ...]
+</code></pre>
+
+<h2>Program vt-viewer</h2>
+
+<p>Reads images from a publication channel and displays them in a window. </p>
+
+<p>The viewer is also used when a parent process such as a the <code>vt-fileplayer</code>
+needs a display window, and in that case the video is sent over a
+private pipe rather than a publication channel and the two file descriptors
+are passed on the command-line.</p>
+
+<p>If there is no windowing system then the video images are displayed in the 
+terminal using text characters for pixels. It looks better if you stand
+back and squint.</p>
+
+<p>Mouse events can be sent to a publication channel by using the <code>--channel</code> 
+option. The <code>vt-maskeditor</code> and <code>vt-fileplayer</code> programs use this feature, and 
+they have a <code>--viewer-channel</code> option to override the name of the publication 
+channel used for these mouse events.</p>
+
+<p>A pbm-format mask file can be used to dim fixed regions of the image.
+The mask is stretched as necessary to fit the image.</p>
+
+<h3>Usage</h3>
+
+<pre><code>vt-viewer [&lt;options&gt;] { &lt;channel&gt; | &lt;shmem-fd&gt; &lt;pipe-fd&gt; }
+</code></pre>
+
+<h3>Options</h3>
+
+<pre><code>--verbose            verbose logging
+--channel=&lt;channel&gt;  publish interaction events to the named channel
+--scale=&lt;divisor&gt;    reduce the image size
+--static             view only the first image
+--mask=&lt;file&gt;        use a mask file
+--title=&lt;title&gt;      sets the window title
+--quit               quit on q keypress
+</code></pre>
+
+<h2>Program vt-watcher</h2>
+
+<p>Performs motion detection on a video stream received over a shared-memory 
+publication channel.</p>
+
+<p>If motion detection exceeds some threshold then an event is published on the 
+<code>--event-channel</code> channel as a json formatted text message. These messages are 
+normally read by a <code>vt-alarm</code> process that can run other external programs.</p>
+
+<p>Motion detection events can also be used to control a <code>vt-recorder</code> process
+by sending a <code>fast</code> command to the recorder's command socket.</p>
+
+<p>The <code>--viewer</code> or <code>--image-channel</code> options can be used to visualise the 
+motion detection. The viewer window shows in green the pixels that change in 
+brightness by more than the "squelch" value, and it also shows in red the 
+pixels that are ignored as the result of the mask.</p>
+
+<p>The motion detection algorithm is extremely simple; one video frame is 
+compared to the next, and pixels that change their brightness more that the 
+squelch value (0..255) are counted up, and if the total count is more than 
+the given threshold value then a motion detection event is emitted.</p>
+
+<p>The <code>--scale</code> option also has an important effect because it increases the
+size of the motion detection pixels (by decreasing the resolution of the 
+image), and it affects the interpretation of the threshold value.</p>
+
+<p>Histogram equalisation is enabled with the <code>--equalise</code> option and this can
+be particularly useful for cameras that loose contrast in infra-red mode.</p>
+
+<p>The command socket, enabled with the <code>--command-socket</code> option, accepts
+<code>squelch</code>, <code>threshold</code> and <code>equalise</code> commands. Multiple commands can
+be sent in one datagram by using semi-colon separators.</p>
+
+<p>The squelch and threshold values have default values that will need
+fine-tuning for your camera. This can be done interactively by temporarily
+using the <code>--verbose</code>, <code>--viewer</code> and <code>--command-socket</code> options, and then 
+sending <code>squelch</code>, <code>threshold</code> and <code>equalise</code> commands to the command socket
+with the <code>vt-socket</code> tool (eg. <code>vt-watcher -C cmd --viewer -v &lt;channel&gt;</code>
+and <code>vt-socket cmd squelch=20\;threshold=1\;equalise=off</code>).
+Adjust the squelch value to eliminate the green highlights when there is 
+no motion. Repeat in different lighting conditions.</p>
+
+<h3>Usage</h3>
+
+<pre><code>vt-watcher [&lt;options&gt;] &lt;input-channel&gt;
+</code></pre>
+
+<h3>Options</h3>
+
+<pre><code>--verbose                   verbose logging
+--viewer                    run a viewer
+--viewer-title=&lt;title&gt;      viewer window title
+--mask=&lt;file&gt;               use a mask file
+--scale=&lt;divisor&gt;           reduce the image size
+--event-channel=&lt;channel&gt;   publish analysis events to the named channel
+--image-channel=&lt;channel&gt;   publish analysis images to the named channel
+--recorder=&lt;path&gt;           recorder socket path
+--squelch=&lt;luma&gt;            pixel change threshold (0 to 255) (default 50)
+--threshold=&lt;pixels&gt;        pixel count threshold for changed pixels per image (default 100)
+--interval=&lt;ms&gt;             minimum time interval between comparisons (default 250)
+--once                      exit if the watched channel is unavailable
+--equalise                  histogram equalisation
+--command-socket=&lt;path&gt;     socket for update commands
+--plain                     do not show changed-pixel highlights in output images
+--repeat-timeout=&lt;seconds&gt;  send events repeatedly with the given period
+</code></pre>
+
+<h2>Program vt-webcamserver</h2>
+
+<p>Serves up video images from a local webcam or video capture device over HTTP.</p>
+
+<p>The HTTP client can either request individual images ("client-pull") or
+receive a continuous JPEG video stream delivered as a 
+<code>multipart/x-mixed-replace</code> content type ("server-push"). Refer to the
+<code>vt-httpserver</code> program for more information.</p>
+
+<p>This program is useful for running on satellite machines in the local network 
+that have webcams attached; a central monitoring machine can run <code>vt-httpclient</code>
+to pull the video stream across the network and onto a local publication 
+channel. </p>
+
+<p>Use <code>--device=test</code> or <code>--device=demo</code> for testing without an attached 
+camera, or on linux use the "vivi" kernel module (<code>sudo modprobe vivi</code>).
+Device-specific configuration options can be added after the device
+name, using a semi-colon separator.</p>
+
+<p>The server will normally poll for the webcam device to come on-line, although
+<code>--retry=0</code> can be used to disable this behaviour. When the device goes 
+off-line again the program will go back to polling, or it will terminate if the
+<code>--once</code> option is used.</p>
+
+<p>The <code>--tz</code> option can be used with <code>--caption</code> to adjust the timezone for the
+caption timestamp. It is typically a negative number for western longitudes 
+in order to show local time.</p>
+
+<h3>Usage</h3>
+
+<pre><code>vt-webcamserver [&lt;options&gt;]
+</code></pre>
+
+<h3>Options</h3>
+
+<pre><code>--verbose                 verbose logging
+--port=&lt;port&gt;             listening port
+--caption                 add a timestamp caption
+--caption-text=&lt;text&gt;     defines the caption text in ascii, with %t for a timestamp
+--timeout=&lt;seconds&gt;       network idle timeout (default 60s)
+--data-timeout=&lt;seconds&gt;  initial image timeout (default 3s)
+--repeat-timeout=&lt;ms&gt;     image repeat timeout (default 1000ms)
+--address=&lt;ip&gt;            listening address
+--tz=&lt;hours&gt;              timezone offset for the caption
+--device=&lt;device&gt;         webcam video device (eg. /dev/video0)
+--refresh=&lt;seconds&gt;       add a refresh header to http responses by default
+--retry=&lt;timeout&gt;         poll for the webcam device to appear (default 1s)
+--once                    exit if the webcam device disappears
+</code></pre>
+
+<h2>Program vt-webcamplayer</h2>
+
+<p>Displays or publishes video from a local webcam or video capture device.</p>
+
+<p>If no publication channel is specified then the video is just displayed in 
+a window. The published video can be recorded by the <code>vt-recorder</code> program
+and later played back by <code>vt-fileplayer</code>, and it can be analysed by a 
+<code>vt-watcher</code>.</p>
+
+<p>Use <code>--device=test</code> or <code>--device=demo</code> for testing without an attached 
+camera, or on linux use the "vivi" kernel module (<code>sudo modprobe vivi</code>).
+Device-specific configuration options can be added after the device
+name, using a semi-colon separator.</p>
+
+<p>The program will normally poll for the webcam device to come on-line, although
+<code>--retry=0</code> can be used to disable this behaviour. When the device goes 
+off-line again the program will go back to polling, or it will terminate if the
+<code>--once</code> option is used.</p>
+
+<p>The <code>--tz</code> option can be used with <code>--caption</code> to adjust the timezone for 
+the caption timestamp. It is typically a negative number for western 
+longitudes in order to show local time.</p>
+
+<h3>Usage</h3>
+
+<pre><code>vt-webcamplayer [&lt;options&gt;]
+</code></pre>
+
+<h3>Options</h3>
+
+<pre><code>--verbose              verbose logging
+--device=&lt;device&gt;      video device (eg. /dev/video0)
+--caption              add a timestamp caption
+--caption-text=&lt;text&gt;  defines the caption text in ascii, with %t for a timestamp
+--viewer               run a viewer
+--channel=&lt;channel&gt;    publish to the named channel
+--scale=&lt;divisor&gt;      reduce the image size
+--tz=&lt;hours&gt;           timezone offset for the caption
+--monochrome           convert to monochrome
+--retry=&lt;timeout&gt;      poll for the device to appear
+--once                 exit if the webcam device disappears
+</code></pre>
+</body>
+</html>
+<!-- Copyright (C) 2017 Graeme Walker. All rights reserved. -->

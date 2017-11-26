@@ -1,0 +1,502 @@
+VideoTools
+==========
+
+What is it?
+-----------
+VideoTools is software for video surveillance that can record, analyse and
+replay images from webcams and network cameras. It runs on Linux and BSD
+Unix, and it is licensed as Open Source under the GPLv3.
+
+It can use direcly-attached webcams or network cameras that provide JPEG or
+H.264 video streams over HTTP or RTP.
+
+It is not suitable for entertainment or video conferencing applications
+because there is no audio or strict time synchronisation.
+
+VideoTools does some of the same things as "ZoneMinder" and other programs,
+so check them out too.
+
+How does it work?
+-----------------
+VideoTools is made up of several co-operating programs that communicate over
+the network or through shared-memory channels.
+
+The shared-memory publication channels are used for publishing video from
+one program to another running on the same machine. Each channel has one
+publisher but any number of subscribers, and once the publisher terminates
+the channel is deleted.
+
+The Linux kernel's "V4L" infrastructure is used to communicate with
+directly-attached webcams, and standard HTTP or RTSP/RTP protocols are used
+to communicate with network cameras. Network cameras must use JPEG or H.264
+encoding, and videotools uses the "libav" library to handle the H.264
+decoding.
+
+Simple motion detection works by looking for pixels that change by more than
+a set amount from one frame to the next, and then counting those pixels to
+see if they are more than some threshold number. Motion detection events can
+be used to control the recording process, or to raise alarms.
+
+Video streams are recorded to disk with separate files for each video frame,
+organised by date and time in a directory hierarchy.
+
+A single "viewer" program is used for displaying video in a window. Web 
+browsers can also be used for viewing video served up by the 
+`vt-httpserver` web server.
+
+Hardware support
+----------------
+Hardware support for webcams on Linux is dependent on the V4L framework, and
+other websites should give you an idea whether your hardware will work with
+V4L. Using the "libv4l" shim library (`./configure --with-libv4l`) might help 
+with more obscure webcam data formats.
+
+Network cameras must use either HTTP or RTP. When using HTTP the camera
+must return one JPEG image for each HTTP GET, or generate a JPEG image stream 
+using the `multipart/x-mixed-replace` content type. When using RTP the camera 
+must return video images with JPEG or H.264 encoding.
+
+Build and install
+-----------------
+The system can be built and installed with the usual rubric:
+
+	./configure ; make ; sudo make install
+
+Use your favourite package management tool (apt, pkg, or whatever) to install
+the following dependencies before running the `configure` script:
+
++ libav
++ libjpeg
++ xlib
++ libncurses
++ libv4l
++ v4l_compat (BSD)
++ webcamd (BSD)
+
+On some BSD systems you will have to add `CPPFLAGS` and `LDFLAGS` options to the
+`configure` command to pick up the header files and libraries installed under
+`/usr/local` or `/opt`. Refer to the `INSTALL` file for more information, or
+just use the `configure.sh` script instead of `configure`.
+
+If there are missing dependencies the build will still go ahead but some
+features will not be available, so please look for warnings in the output
+from the `configure` script.
+
+The "start/stop" script, which is normally installed under `/etc/init.d` on
+Linux or `/usr/local/etc/rc.d` on BSD, can be used to start up the server
+processes, but you must edit its configuration file to tell it exactly what
+to run.
+
+On BSD systems enable the start/stop script by adding the following line to
+`/etc/rc.conf`:
+
+	videotools_enable="YES"
+
+Instructions for the impatient
+------------------------------
++ Use `vt-httpclient` and `vt-webcamplayer` to obtain
+video from network cameras and webcams, and send each video stream to its own
+publication channel.
+
++ Forward video streams across the network by running `vt-httpserver`
+on one side and `vt-httpclient` on the other. Use
+`--channel=<channel>` on the server's command-line and `vt://<address>`
+on the client's.
+
++ Record video to disk by running `vt-recorder` for each channel.
+Use a different base directory for each channel, and give each recorder a
+control socket.
+
++ Do motion detection for each channel using `vt-watcher`, and let each
+watcher control its channel's recorder via the recorder's control socket.
+
++ Run `vt-fileplayer` to replay each channel's recordings to a playback
+channel. Give each fileplayer a control socket.
+
++ Run a central `vt-httpserver` web server with `--channel=*` and
+`gateway=localhost` on the command-line.
+
++ Use a web browser with URL paths like `_0`, `_1` etc. to view each channel,
+and add `?streaming=1` if your browser supports `multipart/x-mixed-replace`.
+Check out the example HTML code for HTML5 streaming techniques and
+user-interface ideas.
+
+Getting started
+---------------
+Once the videotools system is installed you can try out some of the
+components by running them from a terminal.
+
+Start with the "fileplayer", and specify a directory that contains some
+static picture files:
+
+	vt-fileplayer --fade /usr/share
+
+This should show all the images in succession and then stop. If running
+without X Windows then the output will use text characters as pixels filling
+the whole terminal, so stand back and squint, and use Control-C to quit.
+
+Then try the "webcamplayer" in its test mode:
+
+	vt-webcamplayer --device=test
+
+This should show window with a test pattern of moving coloured bars.
+
+Next try viewing video from a webcam, or install the Linux "vivi" module if
+you do not have a webcam attached:
+
+	sudo modprobe vivi
+	vt-webcamplayer --retry=0 --device=/dev/video0
+
+You might need to try different device names (`/dev/video1` etc.) to find the
+webcam output. You will need root permissions to install the vivi module.
+
+Then try viewing the webcam video using a web browser. For this you will need
+to run the "webcamserver", listening on a free TCP port:
+
+	vt-webcamserver -v --port=8080 --device=/dev/video0
+
+Tell your web browser to connect to the server by putting
+`http://127.0.0.1:8080` into the address bar. This should show a static image
+from the webcam.
+
+If your web browser supports the `multipart/x-mixed-replace` content type
+you can get moving video by adding `/?streaming=1` to the URL in the address 
+bar. Alternatively, add `--refresh=1` to the "webcamserver" command-line to 
+get a one second refresh:
+
+	vt-webcamserver -v --refresh=1 --port=8080 --device=/dev/video0
+
+Next you can try viewing the output from a network camera, but you will need
+to know the full URL for getting JPEG images over HTTP, including any
+username and password. If you have this information then just run the
+"httpclient" program with the URL on the command-line, eg:
+
+	vt-httpclient -v --viewer http://admin:secret@192.168.0.3/streaming/channels/1/httppreview
+
+Add the `--scale=3` option if the window is too big.
+
+Now try sending video to a publication channel. Use the "httpclient", if
+that worked, or use "webcamplayer". In either case add `--channel=camera`:
+
+	vt-httpclient --channel=camera http://...
+
+	vt-webcamplayer --channel=camera --device=demo
+
+View the channel using the "viewer" program:
+
+	vt-viewer camera
+
+Try recording the video from the "camera" channel by running a "recorder",
+using `/tmp` as the base directory:
+
+	vt-recorder -v camera /tmp
+
+Check for the recorded images under a sub-directory named after the current
+calendar year, and replay the recorded video with the "fileplayer":
+
+	find /tmp/20?? -type f
+	vt-fileplayer --loop /tmp/20??
+
+Make sure you kill the recorder before it has a chance to fill up your disk.
+
+Now try doing motion detection on the "camera" channel by running the
+"watcher" program:
+
+	vt-watcher -v --viewer camera
+
+You should see a dim, monochrome image with bright green highlights where the
+image is changing.
+
+Create a mask file to define which regions of the image are used for motion
+detection. Run the "maskeditor" program using the "camera" channel to provide
+the base image:
+
+	vt-maskeditor --image-channel=camera /tmp/mask
+
+Use the mouse to define the masked regions and close the window when you
+are done. The new mask file can now be used by the "watcher":
+
+	vt-watcher -v --viewer --mask=/tmp/mask camera
+
+You should see the masked areas in dark red, and the motion detection
+spots in bright green.
+
+Finally, if you have a network camera that can send over RTP and you know its
+URL scheme, try using the "rtspclient" program to encourage it to transmit:
+
+	vt-rtscpclient -v rtsp://admin:secret@192.168.0.3:554/streaming/channels/1
+
+While the "rtspclient" is still running check that you are getting RTP 
+packets on UDP port 8000 by using "netcat":
+
+	nc -l -u -4 0 8000 | base64
+
+And then try viewing the RTP video stream using the "rtpserver":
+
+	vt-rtpserver -v --viewer --scale=auto --port=8000
+
+Configuration
+-------------
+The videotools system is normally configured through the system's `init`
+system. For each videotools process that you want to run you should construct
+a complete command-line containing all the relevant command-line options.
+The options available for each videotools program are described in its `man`
+page.
+
+For traditional script-based `init` systems a videotools start/stop script is
+installed as `/etc/init.d/videotools` on Linux, and this reads a configuration 
+file `/etc/videotools` containing the list of "run" command-lines. Optional
+overrides for directory paths etc. are taken from a file
+`/etc/defaults/videotools`.
+
+On BSD systems the relevant files are `/etc/rc.d/videotools`,
+`/etc/videotools` and `/etc/rc.conf.d/videotools`, but possibly under
+`/usr/local` or `/opt`.
+
+As an example, consider a machine with just one webcam that needs to run a
+"webcamserver" to capture the video from the webcam and serve it up over
+HTTP. Its configuration file would have one "run" line, like this:
+
+	# one webcam serving up jpeg video over http on port 80
+	run vt-webcamserver --port 80 /dev/video0
+
+A central file-server machine doing recording, motion detection and
+web-serving might look more like this:
+
+	# read from network camera "front" using h.264 encoding over rtp
+	run vt-rtspclient --port=8000 --format-file=$RUNDIR/camera.cfg  rtsp://admin:secret@192.168.0.2/streaming/channels/1
+	run vt-rtpserver --port=8000 --format-file=$RUNDIR/camera.cfg --scale=auto --channel=front
+	
+	# read from network camera "rear" using jpeg encoding over http
+	run vt-httpclient --channel=rear http://192.168.0.3/streaming/channels/2
+
+	# read from remote webcam "inside" by talking to its webcamserver
+	run vt-httpclient --channel=inside vt://rpi.localnet:80
+
+	# record the three video streams to disk
+	run vt-recorder --command-socket=$RUNDIR/front.s front $SHAREDIR/front
+	run vt-recorder --command-socket=$RUNDIR/rear.s rear $SHAREDIR/rear
+	run vt-recorder --command-socket=$RUNDIR/inside.s inside $SHAREDIR/inside
+
+	# motion detection, controlling the recorders
+	run vt-watcher --recorder=$RUNDIR/front.s --event-channel=front-events front
+	run vt-watcher --recorder=$RUNDIR/rear.s --event-channel=rear-events rear
+	run vt-watcher --recorder=$RUNDIR/inside.s --event-channel=inside-events inside
+
+	# alarms from motion detection events
+	run vt-alarm front-events /usr/bin/aplay /usr/share/sounds/dog.wav
+	run vt-alarm rear-events /usr/local/bin/my-alarm.sh
+	run vt-alarm inside-events /usr/bin/wall
+
+	# file players, for replaying recordings
+	run vt-fileplayer --channel=front-replay --command-socket=udp://0:3001 $SHAREDIR/front
+	run vt-fileplayer --channel=rear-replay --command-socket=udp://0:3002 $SHAREDIR/rear
+	run vt-fileplayer --channel=inside-replay --command-socket=udp://0:3003 $SHAREDIR/inside
+
+	# main web server, to allow viewing from a html5 web-browser
+	run vt-httpserver --gateway=localhost --port=8080 --dir=$SHAREDIR --channel=*
+
+Viewing
+-------
+The video passing through a channel can be viewed by simply running the
+"viewer" program on the same machine as the channel.
+
+	vt-viewer somechannel
+
+Make sure you are using an account that has permission to access the
+channel's shared memory.
+
+If X-Windows is not available then the viewer program will try to display
+the images in text mode, using characters as pixels.
+
+To view the video images from a channel on another machine you should use
+`ssh -X` (or `ssh -Y` from MacOS).
+
+	ssh -X somebox.localnet vt-viewer somechannel
+
+The "httpserver" program can also be used to serve up video from a channel,
+so that it can be viewed using a web browser.
+
+Snapshot images can be extracted from a channel by using the "channel"
+utility and then viewed with a graphics program, perhaps after using
+ImageMagick tools to change the image format.
+
+	vt-channel --out=temp.dat read somechannel
+	convert temp.dat temp.jpg
+	gimp temp.jpg
+
+Recording and playback
+----------------------
+The "recorder" program is used to record video from a publication channel.
+
+For example, to record from the "camera1" channel to a directory tree under
+`/data/video`, start up a recorder like this:
+
+	vt-recorder camera1 /data/video/camera1
+
+The "fileplayer" program can be used to play back the recordings for a
+particular date:
+
+	vt-fileplayer /data/video/camera1/2017/12/31
+
+Motion detection
+----------------
+The "watcher" program can be used for motion detection. It monitors video
+from one channel and emits motion detection events on another.
+
+The "alarm" program can be used to react to the motion detection events,
+perhaps by playing a sound or sending an email.
+
+	vt-watcher --channel=camera1-events camera1
+	vt-alarm camera1-events aplay alarm.wav
+
+You will normally need a mask file to inhibit motion detection in certain
+parts of the video image.
+
+	vt-maskeditor --image-channel=camera1 camera1-mask.pbm
+	vt-watcher --mask=camera1-mask.pbm --viewer --event-channel=camera1-events camera1
+
+The watcher can control the recorder by using the recorder's
+`--command-socket` option. Motion detection will then cause the recorder to
+start recording in its "fast" mode.
+
+	vt-recorder --command-socket=/var/run/recorder1.s --state=stopped --timeout=20 camera1 /data/video/camera1
+	vt-watcher --recorder=/var/run/recorder1.s camera1
+
+There are two main parameters for the motion detection algorithm: "squelch"
+and "threshold". Refer to the "watcher" documentation for the details.
+
+Security and privacy
+--------------------
+Always use firewalls and encrypted tunnels to protect your privacy when
+exposed to the public internet. Also consider the following points.
+
++ Use the `--address` option to restrict the listening ports to a single
+network interface.
+
++ Note that usernames and passwords in URLs on the command-line will be widely
+visible on the local machine using `ps`.
+
++ Operating system resources such as files (excluding pid files), directories,
+local-domain sockets, shared memory segments, semaphores etc. are all created
+with permissions restricted by the inherited "umask", so make sure that the
+umask in the videotools startup script (or equivalent) is set
+appropriately.
+
++ Consider creating a special user group to control access to the videotools
+resources more precisely: create a new group and make all the videotools
+executables group-suid (for example), and then add user accounts to the group
+in order to grant access to the videotools resources. Note that the `--user`
+option does not affect resource ownership, although it can indirectly affect
+the ownership of files created by an external program run by
+`vt-alarm`.
+
++ Local-domain sockets are created whenever a program subscribes to a
+publication channel and these sockets are briefly bound to a filesystem
+path of `/tmp/vt-<channel>.<pid>`. However, they can be put in a
+more private directory by prefixing the channel name on the subscriber's side
+using an extended format of `<dir>/<name>/<channel>`, to give socket paths
+of `<dir>/<name>.<pid>`.
+
++ The `vt-alarm` program uses the `system()` function to execute the program
+you specify on the command-line. This provides a lot of flexibility for
+output redirection, back-ticks, environment variable substitution etc, but
+it also presents a large attack surface if the program's configuration or
+run-time environment is compromised.
+
+IPv6
+----
+IPv6 is used whenever an address uses an IPv6 format or whenever a hostname
+resolves to an IPv6 address.
+
+Programs that use the `--port` option for the port number also have an
+`--address` option for the network address, so adding `--address=::` will
+switch from IPv4 to IPv6 since "::" is the IPv6 wildcard address. Similarly
+for programs with a `--command-socket` option the full IPv6 transport address
+can be given, so for example using `--command-socket=:::9000` will switch
+the socket to IPv6 port 9000.
+
+IPv6 addresses can be used in URLs (eg. `vt-httpclient http://::1:80/x`),
+but they will generally also need square brackets to avoid ambiguity with
+respect to port numbers, eg.  `http://[fc00::1]/x`.
+
+For hostnames that can resolve to IPv4 or IPv6 addresses the first returned
+address is used. (Refer to `getaddrinfo()`'s `AI_ADDRCONFIG` option for more
+details.)
+
+RTP multicast features are only relevant to IPv4.
+
+Connections
+-----------
+When videotools processes start up they usually wait for their primary inputs
+to become available, whether that's a webcam device, publication channel, or
+network peer; and if that input subsequently disappears then they will go
+back to a waiting state. This means that a set of co-operating processes can
+be started up without worrying about the order in which they connect to each
+other, and it makes is easy to restart individual components without restarting
+the whole videotools system.
+
+However, this default behaviour can be modified by `--retry` and `--once`
+command-line options: if `--retry=0` is used then the program will exit
+immediately if the input resource is not available, and if `--once` is used 
+then then any disappearance of a previously active input causes the program to 
+exit. These options might be useful if the videotools processes are being 
+managed by an "init" system that knows about their resource dependencies, or 
+if they are operating in a stable, low-maintenance system where failing fast 
+might be desirable.
+
+The connectivity of an established set of local videotools processes can be
+deduced from metadata held within publication channels. Each channel has a
+small structure describing the publisher process and a set of "slot" 
+structures where the channel subscribers register themselves.
+
+Channel metadata can be seen by using the "channel" utility:
+
+	vt-channel -q list | xargs -n1 vt-channel info
+
+The "httpserver" program can also make the channel metadata available across 
+the network via the special double-underscore url path ("__"):
+
+	vt-httpserver --port=8080 --channel=\*
+	wget -q http://localhost:8080/__ -O channels.json
+
+Troubleshooting
+---------------
+If you encounter problems then stop all the videotools processes, and then
+run only the relevant videotools program from the command-line. Use the the
+`--verbose` option to get extra log messages, and do not use the `--daemon`
+option. If the problems seem to be related to permissions then run your
+tests as "root" by using `sudo` or equivalent.
+
+Add the `--scale` option wherever possible to reduce the image sizes during
+your tests. This is particularly important if you see dropped RTP packets or
+corrupted H.264 video from the "rtpserver".
+
+Work through the "Getting started" section (above) and vary the steps to get
+closer to the problem you are seeing.
+
+Program aborts can cause publication channels to become congested or invalid
+in some way. Use the "channel" utility to purge or delete them. As a last
+resort carefully remove files from the `/dev/shm` directory (Linux only and
+at your own risk), or reboot.
+
+	vt-channel list
+	vt-channel purge somechannel
+	vt-channel delete somechannel
+
+Problems with USB webcams can sometimes be resolved by unplugging them and
+the plugged them back in, particularly if you get weird errors on startup.
+
+Wireshark can be useful for diagnosing network problems and for figuring out
+the capabilities of network cameras; the `Analyze->FollowTcpStream` option
+can be particularly productive for HTTP.
+
+The "vlc" media player is useful for experimenting with RTSP/RTP.
+
+If you have corruped webcam images then experiment with adding `;fmt=x` to
+the device name, where x is a small integer, eg. `/dev/video0;fmt=10`. (Use
+a backslash or single-quotes to protect the semi-colon.) Also try building
+with and without "libv4l".
+
+If JPEG video over RTP looks really bad then try using the "rtpserver"
+program's `--jpeg-table` option.

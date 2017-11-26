@@ -1,0 +1,59 @@
+.\" Copyright (C) 2017 Graeme Walker
+.\" 
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\" Copyright Graeme Walker 2017
+.TH videotools 1 "" "" "User Commands"
+.SH NAME
+vt-maskeditor \- creates and edits a mask file that can be used by the `vt-watcher` program
+.SH SYNOPSIS
+.B vt-maskeditor 
+[\fIoptions\fR] \fImask-file
+.SY vt-maskeditor
+.OP \-\-verbose 
+.OP \-\-image-file path
+.OP \-\-image-channel channel
+.OP \-\-viewer-channel channel
+.I mask-file
+.YS
+.SH DESCRIPTION
+Creates and edits a mask file that can be used by the `vt-watcher` program.
+.PP
+The `vt-watcher` program analyses a video stream for moving objects, and it uses
+a mask file to tell it what parts of the image to ignore.
+.PP
+The mask is edited over the top a background image, and that image can come 
+from a static image file or from a publication channel (`--image-channel`).
+.PP
+Click and drag the mouse to create masked areas, and hold the shift key to
+revert. The mask file is continuously updated in-place; there is no "save" 
+operation.
+.PP
+.PP
+The following command-line options can be used:
+.TP
+\fB\-\-verbose\fR
+verbose logging
+.TP
+\fB\-\-image-file\fR=\fIpath
+background image file
+.TP
+\fB\-\-image-channel\fR=\fIchannel
+channel for capturing the initial backgound image
+.TP
+\fB\-\-viewer-channel\fR=\fIchannel
+override the default viewer channel name
+.SH COPYRIGHT
+Copyright (c) Graeme Walker 2017 <graemewalker@sf.net>
+.PP
+This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.

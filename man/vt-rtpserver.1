@@ -1,0 +1,105 @@
+.\" Copyright (C) 2017 Graeme Walker
+.\" 
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\" Copyright Graeme Walker 2017
+.TH videotools 1 "" "" "User Commands"
+.SH NAME
+vt-rtpserver \- listens for an incoming rtp video stream and sends it to a local publication  channel
+.SH SYNOPSIS
+.B vt-rtpserver 
+[\fIoptions\fR] 
+.SY vt-rtpserver
+.OP \-\-verbose 
+.OP \-\-viewer 
+.OP \-\-scale divisor
+.OP \-\-monochrome 
+.OP \-\-port port
+.OP \-\-channel channel
+.OP \-\-address ip
+.OP \-\-multicast address
+.OP \-\-format-file path
+.OP \-\-type type
+.OP \-\-jpeg-table ff
+.YS
+.SH DESCRIPTION
+Listens for an incoming RTP video stream and sends it to a local publication 
+channel. 
+.PP
+Some network cameras use RTP rather than HTTP because it is more suited to 
+high resolution video, especially when using H.264 encoding, and it also 
+allows for IP multicasting.
+.PP
+Only the "H264/90000" and "JPEG/90000" RTP payload types are supported by this
+server. 
+.PP
+The H.264 video format requires plenty of processing power; if the H.264 
+decoding is too slow then packets will be missed and the packet stream
+will have too many holes to decode anything. The processing load can 
+be reduced by handling only RTP packets that match certain criteria by 
+using the `--filter` option, or by using `--scale` and `--monochrome`
+to reduce the image resolution after decoding.
+.PP
+Cameras that use RTP will normally be controlled by an RTSP client (such as
+`vt-rtspclient`); the RTSP client asks the camera to start sending
+its video stream to the address that the RTP server is listening on.
+.PP
+The camera responds to the RTSP request with a "fmtp" string, which describes
+the video format for the H.264 video packets. If this information is not
+available from within the RTP packet stream itself then it can be passed 
+to the rtpserver using the `--format-file` option.
+.PP
+The RTCP protocol is not currently used so the rtpserver only opens one
+UDP port for listening, not two. Also be aware that if two rtpservers
+are listening on the same UDP port then they will steal packets from
+one another and it is likely that both will stop working.
+.PP
+.PP
+The following command-line options can be used:
+.TP
+\fB\-\-verbose\fR
+verbose logging
+.TP
+\fB\-\-viewer\fR
+run a viewer
+.TP
+\fB\-\-scale\fR=\fIdivisor
+reduce the image size (or 'auto')
+.TP
+\fB\-\-monochrome\fR
+convert to monochrome
+.TP
+\fB\-\-port\fR=\fIport
+listening port
+.TP
+\fB\-\-channel\fR=\fIchannel
+publish to the named channel
+.TP
+\fB\-\-address\fR=\fIip
+listening address
+.TP
+\fB\-\-multicast\fR=\fIaddress
+multicast group address
+.TP
+\fB\-\-format-file\fR=\fIpath
+file to read for the H264 format parameters
+.TP
+\fB\-\-type\fR=\fItype
+process packets of one rtp payload type (eg. 26 or 96)
+.TP
+\fB\-\-jpeg-table\fR=\fIff
+tweak for jpeg quantisation tables (0,1 or 2)
+.SH COPYRIGHT
+Copyright (c) Graeme Walker 2017 <graemewalker@sf.net>
+.PP
+This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.

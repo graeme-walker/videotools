@@ -1,0 +1,38 @@
+.\" Copyright (C) 2017 Graeme Walker
+.\" 
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\" Copyright Graeme Walker 2017
+.TH videotools 1 "" "" "User Commands"
+.SH NAME
+vt-socket \- sends a command string to a local-domain or udp socket
+.SH SYNOPSIS
+.B vt-socket 
+\fIsocket command-word [command-word ...]
+.SH DESCRIPTION
+Sends a command string to a local-domain or UDP socket. 
+.PP
+This can be used with the `vt-fileplayer` and `vt-recorder` programs when using 
+their `--command-socket` option.
+.PP
+The socket is a local-domain socket by default, but a UDP network socket 
+if the socket name looks like a transport address or if it starts 
+with `udp://`.
+.PP
+The standard "netcat" utility (`nc`) can also be used to send messages to
+UDP and local-domain sockets.
+.PP
+.SH COPYRIGHT
+Copyright (c) Graeme Walker 2017 <graemewalker@sf.net>
+.PP
+This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.

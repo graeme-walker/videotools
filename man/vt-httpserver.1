@@ -1,0 +1,129 @@
+.\" Copyright (C) 2017 Graeme Walker
+.\" 
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\" Copyright Graeme Walker 2017
+.TH videotools 1 "" "" "User Commands"
+.SH NAME
+vt-httpserver \- reads video from one or more publication channels and makes it available  over the network using http
+.SH SYNOPSIS
+.B vt-httpserver 
+[\fIoptions\fR] 
+.SY vt-httpserver
+.OP \-\-port port
+.OP \-\-timeout seconds
+.OP \-\-data-timeout seconds
+.OP \-\-repeat-timeout ms
+.OP \-\-address ip
+.OP \-\-dir dir
+.OP \-\-file filename
+.OP \-\-file-type fname:type
+.OP \-\-default fname-or-channel
+.OP \-\-channel name
+.OP \-\-gateway udp-host
+.OP \-\-refresh seconds
+.YS
+.SH DESCRIPTION
+Reads video from one or more publication channels and makes it available 
+over the network using HTTP.
+.PP
+The HTTP client can either request individual images ("client-pull") or
+receive a continuous JPEG video stream delivered as a 
+`multipart/x-mixed-replace` content type ("server-push").
+.PP
+For server-push add a `streaming=1` parameter to the URL, eg. 
+`http://localhost:80/?streaming=1`. This should always be used when the 
+client is the `vt-httpclient` program, but be careful when using a browser 
+because not all of them support `multipart/x-mixed-replace`, and some of 
+them go beserk with "save-as" dialog boxes.
+.PP
+The client-pull model works best with a browser that uses JavaScript code
+to generate a continuous stream of GET requests, typically using the 
+"Fetch" API.
+.PP
+For browsers that do not have JavaScript or support for `multipart/x-mixed-replace`
+a `refresh=1` URL parameter can be used so that the server sends
+back static images with a HTTP "Refresh" header, causing the browser to 
+repeat the GET requests at intervals. This can also be made the default
+behaviour using the `--refresh` command-line option on the server.
+.PP
+A `scale` URL parameter can be used to reduce the size of the images, and
+a `type` parameter can be used to request an image format (`jpeg`, `pnm`, or
+`raw`, with `jpeg` as the default). The type can also be `any`, which means 
+that no image conversion or validation is performed; whatever data is 
+currently in the publication channel is served up.
+.PP
+Static files can be served up by using the `--dir` option. Normally any file
+in the directory will be served up, but a restricted set of files can be 
+specified by using the `--file` option. The `--file-type` option can be used
+to give the files' content-type, by using the filename and the content-type 
+separated by a colon, eg. `--file-type=data.json:application/json`. The default 
+file that is served up for an empty path in the url can be modified by the 
+`--default` option, eg. `--default=main.html`.
+.PP
+One or more channel names should normally be specified on the command-line
+using the `--channel` option. Clients can select a channel by name by
+using URL paths with an underscore prefix (eg. `_foo`, `_bar`); or by index 
+by using URL paths like `_0`, `_1`, etc. 
+.PP
+If `--channel=*` is specified then any valid channel name can be used in 
+the URL path. This also enables the special `/__` url that returns channel 
+information as a JSON structure.
+.PP
+The `--gateway=<host>` option can be used to integrate static web pages
+with UDP command sockets; HTTP requests with a `send` parameter of the
+form `<port> <message>` are sent as UDP messages to the `--gateway` IP 
+address and the specified port.
+.PP
+.PP
+The following command-line options can be used:
+.TP
+\fB\-\-port\fR=\fIport
+listening port
+.TP
+\fB\-\-timeout\fR=\fIseconds
+network idle timeout (default 60s)
+.TP
+\fB\-\-data-timeout\fR=\fIseconds
+initial image timeout (default 3s)
+.TP
+\fB\-\-repeat-timeout\fR=\fIms
+image repeat timeout (default 1000ms)
+.TP
+\fB\-\-address\fR=\fIip
+listening address
+.TP
+\fB\-\-dir\fR=\fIdir
+serve up static files
+.TP
+\fB\-\-file\fR=\fIfilename
+allow serving the named file 
+.TP
+\fB\-\-file-type\fR=\fIfname:type
+define the content-type of the the named file 
+.TP
+\fB\-\-default\fR=\fIfname-or-channel
+define the default resource
+.TP
+\fB\-\-channel\fR=\fIname
+serve up named video channel
+.TP
+\fB\-\-gateway\fR=\fIudp-host
+act as a http-post-to-udp-command-line gateway
+.TP
+\fB\-\-refresh\fR=\fIseconds
+add a refresh header to http responses by default
+.SH COPYRIGHT
+Copyright (c) Graeme Walker 2017 <graemewalker@sf.net>
+.PP
+This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.

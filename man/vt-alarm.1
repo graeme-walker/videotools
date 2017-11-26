@@ -1,0 +1,49 @@
+.\" Copyright (C) 2017 Graeme Walker
+.\" 
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\" Copyright Graeme Walker 2017
+.TH videotools 1 "" "" "User Commands"
+.SH NAME
+vt-alarm \- monitors a watcher's output channel and runs an external command on  each motion-detection event
+.SH SYNOPSIS
+.B vt-alarm 
+[\fIoptions\fR] \fIevent-channel [command [arg ...]]
+.SY vt-alarm
+.OP \-\-verbose 
+.OP \-\-threshold pixels
+.I event-channel [command [arg ...]]
+.YS
+.SH DESCRIPTION
+Monitors a watcher's output channel and runs an external command on 
+each motion-detection event.
+.PP
+For example, an "alarm" process can be used to generate an alarm sound 
+when motion detection is triggered, by running an external command 
+like "aplay".
+.PP
+If the `--run-as` option is given then the external command runs with
+that account's user-id and group-id if possible.
+.PP
+.PP
+The following command-line options can be used:
+.TP
+\fB\-\-verbose\fR
+verbose logging
+.TP
+\fB\-\-threshold\fR=\fIpixels
+alarm threshold in pixels per image
+.SH COPYRIGHT
+Copyright (c) Graeme Walker 2017 <graemewalker@sf.net>
+.PP
+This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.

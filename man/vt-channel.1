@@ -1,0 +1,53 @@
+.\" Copyright (C) 2017 Graeme Walker
+.\" 
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\" Copyright Graeme Walker 2017
+.TH videotools 1 "" "" "User Commands"
+.SH NAME
+vt-channel \- a tool for working with publication channels
+.SH SYNOPSIS
+.B vt-channel 
+[\fIoptions\fR] \fI{list|info|purge|delete|peek|read} channel
+.SY vt-channel
+.OP \-\-all 
+.OP \-\-out filename
+.OP \-\-quiet 
+.I {list|info|purge|delete|peek|read} channel
+.YS
+.SH DESCRIPTION
+A tool for working with publication channels.
+.PP
+The following sub-commands are available: "list" lists all local
+publication channels; "info" displays diagnostic information for 
+the channel; "read" reads one message from the channel; "peek"
+reads the last-available message from the channel without
+waiting; "purge" clears subscriber slots if subscribers have 
+failed without cleaning up; and "delete" deletes the channel,
+in case a publisher fails without cleaning up.
+.PP
+.PP
+The following command-line options can be used:
+.TP
+\fB\-\-all\fR
+include info for unused slots
+.TP
+\fB\-\-out\fR=\fIfilename
+output filename
+.TP
+\fB\-\-quiet\fR
+fewer warnings
+.SH COPYRIGHT
+Copyright (c) Graeme Walker 2017 <graemewalker@sf.net>
+.PP
+This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.

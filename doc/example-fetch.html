@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<title>example-html5</title>
+<meta charset="utf-8" />
+<script type="text/javascript">
+
+var VT = {
+
+	// canvas: a canvas wrapper that makes repeated async http get requests using window.fetch()
+	canvas : function( m_canvas , m_url )
+	{
+		var m_context = m_canvas.getContext( "2d" ) ;
+
+		var m_config = {
+			rerun_ms : 20 ,
+			retry_ms : 1500 ,
+		} ;
+
+		var m_dx = 0 ;
+		var m_dy = 0 ;
+
+		var fn = {
+
+			headerValue : function( headers , key )
+			{
+				var prefix = "X-VT-" ;
+				if( prefix.indexOf("__") >= 0 )
+					prefix = "X-" ;
+
+				return headers.get( prefix + key ) ;
+			} ,
+
+			handleResponse : function( response )
+			{
+				if( !response.ok )
+					throw new Error( response.statusText ) ;
+
+				if( response.headers.get("content-type").indexOf("image") !== 0 )
+					throw new Error( "http get returned a non-image response: " + response.headers.get("content-type") ) ;
+
+				m_dx = fn.headerValue( response.headers , "Width" ) - 0 ;
+				m_dy = fn.headerValue( response.headers , "Height" ) - 0 ;
+
+				if( m_dx > 0 && m_canvas.width != m_dx ) m_canvas.width = m_dx ;
+				if( m_dy > 0 && m_canvas.height != m_dy ) m_canvas.height = m_dy ;
+
+				return response.blob() ;
+			} ,
+
+			handleBlob : function( blob )
+			{
+				return window.createImageBitmap( blob , 0 , 0 , m_canvas.width , m_canvas.height ) ;
+			} ,
+
+			handleBitmap : function( bitmap )
+			{
+				// blit the bitmap to the canvas
+				m_context.globalCompositeOperation = 'source-over' ;
+				m_context.drawImage( bitmap , 0 , 0 ) ;
+
+				return Promise.resolve() ;
+			} ,
+
+			reschedule : function()
+			{
+				window.setTimeout( fn.run , m_config.rerun_ms ) ;
+				return Promise.resolve() ;
+			} ,
+
+			handleError : function( error )
+			{
+				window.setTimeout( fn.run , m_config.retry_ms ) ;
+				m_context.globalCompositeOperation = 'source-over' ;
+				m_context.fillStyle = 'grey' ;
+				m_context.fillRect( 0 , 0 , m_canvas.width , m_canvas.height ) ;
+				m_context.fillStyle = 'white' ;
+				m_context.fillText( m_url+": "+error.message , 10 , 10 ) ;
+			} ,
+
+			run : function()
+			{
+				window.fetch( m_url )
+					.then( fn.handleResponse )
+					.then( fn.handleBlob )
+					.then( fn.handleBitmap )
+					.then( fn.reschedule )
+					.catch( fn.handleError ) ;
+			}
+		} ;
+
+		return {
+			run : function()
+			{
+				fn.run() ;
+			}
+		} ;
+	} ,
+
+	onLoad : function()
+	{
+		var canvas_list = document.getElementsByClassName( "canvas" ) ;
+		for( var i = 0 ; i < canvas_list.length ; i++ )
+		{
+			VT.canvas(canvas_list[i],"/_"+i).run() ;
+		}
+		return true ;
+	}
+} ;
+
+</script>
+</head>
+<body onload="return VT.onLoad(this)">
+
+<!-- html5 canvases made active by onload() -->
+<canvas id="0" class="canvas" width="200" height="20"></canvas>
+<canvas id="1" class="canvas" width="200" height="20"></canvas>
+<canvas id="2" class="canvas" width="200" height="20"></canvas>
+<canvas id="3" class="canvas" width="200" height="20"></canvas>
+<canvas id="4" class="canvas" width="200" height="20"></canvas>
+<canvas id="5" class="canvas" width="200" height="20"></canvas>
+<canvas id="6" class="canvas" width="200" height="20"></canvas>
+<canvas id="7" class="canvas" width="200" height="20"></canvas>
+<canvas id="8" class="canvas" width="200" height="20"></canvas>
+<canvas id="9" class="canvas" width="200" height="20"></canvas>
+
+</body>
+</html>
+<!-- Copyright (C) 2017 Graeme Walker. All rights reserved. -->

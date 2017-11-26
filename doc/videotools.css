@@ -1,0 +1,18 @@
+
+table.options_ {
+	border: 1px solid #C4CFE5;
+	border-collapse: collapse;
+	border-spacing: 0px;
+	padding: 4px 6px;
+	margin: 2px;
+}
+
+table.options_ td {
+	border: 1px solid #C4CFE5;
+	padding: 1px 5px 1px 5px;
+}
+
+pre.fragment {
+	backgroud-color: #f1edf7;
+}
+

@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<title>example-html5</title>
+<meta charset="utf-8" />
+<script type="text/javascript">
+
+var VT = {
+
+	// shape: a fileplayer control shape that can be drawn onto a canvas
+	shape : function( m_code )
+	{
+		var fn = {
+
+			drawChevron : function( context , x , y , dx1 , dx2 )
+			{
+				context.beginPath() ;
+				context.moveTo( x+dx1 , y ) ;
+				context.lineTo( x+dx2 , y+5 ) ;
+				context.lineTo( x+dx1 , y+10 ) ;
+				context.stroke() ;
+				context.closePath() ;
+			} ,
+
+			drawBlob : function( context , x , y )
+			{
+				context.beginPath() ;
+				context.strokeRect( x , y , 5 , 5 ) ;
+				context.closePath() ;
+			} ,
+		
+			drawBar : function( context , x , y )
+			{
+				context.beginPath() ;
+				context.moveTo( x , y ) ;
+				context.lineTo( x , y+10 ) ;
+				context.stroke() ;
+				context.closePath() ;
+			} ,
+
+			drawChevronLeft : function( context , x , y )
+			{
+				fn.drawChevron( context , x , y , 5 , 0 ) ;
+			} ,
+
+			drawChevronRight : function( context , x , y )
+			{
+				fn.drawChevron( context , x , y , 0 , 5 ) ;
+			} ,
+
+			drawShape : function( code , canvas , context , x , y )
+			{
+				if( code === '>' )
+				{
+					fn.drawChevronRight( context , x , y ) ;
+				}
+				else if( code === '<' )
+				{
+					fn.drawChevronLeft( context , x , y ) ;
+				}
+				else if( code === '|' )
+				{
+					fn.drawBar( context , x , y ) ;
+				}
+				else if( code === 'o' )
+				{
+					fn.drawBlob( context , x , y ) ;
+				}
+			} ,
+
+			shapeHeight : function( code )
+			{
+				return code === 'R' ? 12 : 10 ;
+			} ,
+
+			shapeWidth : function( code )
+			{
+				if( code === '>' || code === '<' )
+				{
+					return 9 ;
+				}
+				else if( code === '|' )
+				{
+					return 4 ;
+				}
+				else if( code === 'o' )
+				{
+					return 5 ;
+				}
+				else if( code === 'R' )
+				{
+					return 0 ;
+				}
+			} ,
+		} ;
+
+		return {
+			width : fn.shapeWidth( m_code ) ,
+			height : fn.shapeHeight( m_code ) ,
+			draw : function( canvas , context , x , y )
+			{
+				fn.drawShape( m_code , canvas , context , x , y ) ;
+			}
+		} ;
+	} ,
+
+	// control: a fileplayer control composed of one or more shapes
+	control : function( m_codes , m_x , m_y )
+	{
+		var m_shapes = [] ;
+		var m_width = 0 ;
+		var m_height = 0 ;
+
+		var i ;
+		for( i = 0 ; i < m_codes.length ; i++ )
+		{
+			m_shapes[i] = VT.shape( m_codes.charAt(i) ) ;
+			m_width += m_shapes[i].width ;
+			m_height = m_shapes[i].height ;
+		}
+
+		var fn = {
+
+			ribbon : function()
+			{
+				return m_codes === "R" ;
+			} ,
+
+			realX : function( x , canvas )
+			{
+				if( fn.ribbon() )
+					return 0 ;
+				else if( x === "centre" )
+					return (canvas.width-m_width)/2 ;
+				else if( x < 0 )
+					return canvas.width + x - m_width/2 ;
+				else
+					return x - m_width/2 ;
+			} ,
+
+			realY : function( y , canvas )
+			{
+				if( y < 0 )
+					return canvas.height+y ;
+				else
+					return y ;
+			} ,
+
+			kerning : function( code_this , code_next )
+			{
+				var ll = code_this === '<' && code_next === '<' ;
+				var rr = code_this === '>' && code_next === '>' ;
+				var pp = code_this === '|' && code_next === '|' ;
+				return pp ? -2 : ( ( ll || rr ) ? -3 : 0 ) ;
+			} ,
+
+			draw : function( canvas , context , pressed )
+			{
+				if( !fn.ribbon() )
+				{
+					var i ;
+					var x = fn.realX( m_x , canvas ) ;
+					var y = fn.realY( m_y , canvas ) ;
+					if( pressed ) { x += 1 ; y += 1 ; }
+					for( i = 0 ; i < m_shapes.length ; i++ )
+					{
+						m_shapes[i].draw( canvas , context , x , y ) ;
+						x += m_shapes[i].width ;
+						x += fn.kerning( m_codes.charAt(i) , m_codes.charAt(i+1) ) ;
+					}
+				}
+			} ,
+
+			hit : function( canvas , x_in , y_in )
+			{
+				var x0 = fn.realX( m_x , canvas) ;
+				var y0 = fn.realY( m_y , canvas) ;
+				var x1 = x0 + ( m_width === 0 ? canvas.width : m_width ) ;
+				var y1 = y0 + m_height ;
+				return x_in >= x0 && x_in <= x1 && y_in >= y0 && y_in <= y1 ;
+			}
+		} ;
+
+		return {
+			hit : function( canvas , x , y )
+			{
+				return fn.hit( canvas , x , y ) ;
+			} ,
+			draw : function( canvas , context )
+			{
+				fn.draw( canvas , context ) ;
+			}
+		} ;
+	} ,
+
+	// controls: a set of fileplayer controls that respond to canvas click events by sending udp messages using XMLHttpRequest()
+	controls : function()
+	{
+		var m_config = [
+			{ x : -70 , y : -25 , s : ">" , cmd : "play --forwards --sleep=50 --skip=1" } ,
+			{ x : -50 , y : -25 , s : ">>" , cmd : "play --forwards --sleep=50 --skip=50" } ,
+			{ x : -30 , y : -25 , s : ">|" , cmd : "; play --forwards ; next" } ,
+			{ x : -10 , y : -25 , s : ">>||" , cmd : "stop ; move last" } ,
+			{ x : "centre" , y : -25 , s : "o" , cmd : "stop" } ,
+			{ x : 70 , y : -25 , s : "<" , cmd : "play --backwards --sleep=50 --skip=1" } ,
+			{ x : 50 , y : -25 , s : "<<" , cmd : "play --backwards --sleep=50 --skip=50" } ,
+			{ x : 30 , y : -25 , s : "|<" , cmd : "play --backwards ; previous" } ,
+			{ x : 10 , y : -25 , s : "||<<" , cmd : "stop ; move first" } ,
+			{ x : 0 , y : -12 , s : "R" , cmd : "ribbon %x" }
+		] ;
+
+		var m_port = 0 ;
+		var m_active = 0 ;
+		var m_press_index = null ;
+		var m_controls = [] ;
+
+		var i ;
+		for( i = 0 ; i < m_config.length ; i++ )
+		{
+			m_controls[i] = VT.control( m_config[i].s , m_config[i].x , m_config[i].y ) ;
+		}
+
+		var fn = {
+
+			drawControl : function( control , canvas , context , pressed )
+			{
+				fn.styleOn( context , pressed ) ;
+				control.draw( canvas , context , pressed ) ;
+				fn.styleOff( context ) ;
+			} ,
+
+			drawControls : function( canvas , context )
+			{
+				var i ;
+				for( i = 0 ; i < m_controls.length ; i++ )
+				{
+					fn.drawControl( m_controls[i] , canvas , context , m_press_index === i ) ;
+				}
+			} ,
+
+			install : function( canvas , context )
+			{
+				canvas.onclick = fn.onClick ;
+				canvas.onmousedown = function( e ) { fn.onMouseDown(e,canvas,context) ; } ;
+				canvas.onmouseup = function( e ) { fn.onMouseUp(e,canvas,context) ; } ;
+			} ,
+
+			uninstall : function( canvas )
+			{
+				canvas.onclick = null ;
+				canvas.onmousedown = null ;
+				canvas.onmouseup = null ;
+			} ,
+
+			styleOn : function( context , pressed )
+			{
+				context.strokeStyle = pressed ? 'green' : 'yellow' ;
+				context.shadowColor = 'brown' ;
+				context.shadowOffsetX = pressed ? -1 : 1 ;
+				context.shadowOffsetY = pressed ? -1 : 1 ;
+				context.lineWidth = 3 ;
+			} ,
+
+			styleOff : function( context )
+			{
+				context.shadowColor = 'black' ;
+				context.shadowOffsetX = 0 ;
+				context.shadowOffsetY = 0 ;
+			} ,
+
+			findControl : function( canvas , x , y )
+			{
+				var i ;
+				for( i = 0 ; i < m_controls.length ; i++ )
+				{
+					if( m_controls[i].hit(canvas,x,y) )
+						return i ;
+				}
+				return null ;
+			} ,
+
+			onMouseDown : function( event , canvas , context )
+			{
+				if( m_active )
+				{
+					var x = event.pageX - event.target.offsetLeft ;
+					var y = event.pageY - event.target.offsetTop ;
+					m_press_index = fn.findControl( canvas , x , y ) ;
+					fn.drawControls( canvas , context ) ;
+				}
+			} ,
+
+			onMouseUp : function( event , canvas , context )
+			{
+				if( m_active )
+				{
+					m_press_index = null ;
+					fn.drawControls( canvas , context ) ;
+				}
+			} ,
+
+			onClick : function( event )
+			{
+				var x = event.pageX - event.target.offsetLeft ;
+				var y = event.pageY - event.target.offsetTop ;
+				var index = fn.findControl( event.target , x , y ) ;
+				if( index !== null )
+				{
+					var cmd = m_config[index].cmd ;
+					if( cmd !== "" )
+					{
+						cmd = cmd.replace( / /g , '+' ) ;
+						cmd = cmd.replace( /%x/g , x ) ;
+						var r = new XMLHttpRequest() ;
+						r.open( "GET" , "/?send=" + m_port + "+" + cmd ) ;
+						r.setRequestHeader( "send" , cmd ) ;
+						r.send() ;
+					}
+				}
+			} ,
+
+			apply : function( active , canvas , context , port )
+			{
+				if( active && !m_active )
+				{
+					fn.install( canvas , context , port ) ;
+					m_port = port ;
+					m_active = 1 ;
+				}
+				else if( !active && m_active )
+				{
+					fn.uninstall( canvas ) ;
+					m_active = 0 ;
+				}
+				if( m_active )
+				{
+					fn.drawControls( canvas , context ) ;
+				}
+			}
+		} ;
+
+		return {
+			apply : function( active , canvas , context , port )
+			{
+				fn.apply( active , canvas , context , port ) ;
+			}
+		} ;
+	} ,
+
+	// canvas: a canvas wrapper that makes repeated async http get requests using window.fetch()
+	canvas : function( m_canvas , m_url )
+	{
+		var m_context = m_canvas.getContext( "2d" ) ;
+		var m_controls = VT.controls() ;
+
+		var m_config = {
+			rerun_ms : 20 ,
+			retry_ms : 1500 ,
+		} ;
+
+		var m_dx = 0 ;
+		var m_dy = 0 ;
+		var m_name = "" ;
+		var m_info = {} ;
+		var m_text = "" ;
+		var m_port = 0 ;
+
+		var fn = {
+
+			log : function( line )
+			{
+				//console.log( m_canvas.id + ": " + line ) ;
+			} ,
+
+			headerValue : function( headers , key )
+			{
+				var prefix = "X-VT-" ;
+				if( prefix.indexOf("__") >= 0 )
+					prefix = "X-" ;
+
+				return headers.get( prefix + key ) ;
+			} ,
+
+			parse : function( info_string )
+			{
+				var result = null ;
+				if( JSON.parse )
+				{
+					try {
+						result = JSON.parse( info_string ) ;
+					}
+					catch( e ) {
+					}
+				}
+				if( result === null )
+					result = { type : "" } ;
+				return result ;
+			} ,
+
+			parseHeaders : function( headers )
+			{
+				m_dx = fn.headerValue( headers , "Width" ) - 0 ;
+				m_dy = fn.headerValue( headers , "Height" ) - 0 ;
+				m_name = fn.headerValue( headers , "Source" ) ;
+				m_info = fn.parse( decodeURIComponent(fn.headerValue(headers,"Source-Info")) ) ;
+				m_text = m_info.type ;
+				m_port = m_info.port ? m_info.port : 0 ;
+			} ,
+
+			addText : function( text )
+			{
+				if( text )
+				{
+					var x = 15 ;
+					var y = 50 ;
+
+					m_context.globalCompositeOperation = 'multiply' ;
+					m_context.fillStyle = 'rgb(110,110,110)' ;
+					m_context.fillRect( x-5 , y-10 , m_context.measureText(text).width+10 , 14 ) ;
+
+					m_context.globalCompositeOperation = 'source-over' ;
+					m_context.fillStyle = 'white' ;
+					m_context.fillText( text , x , y ) ;
+				}
+			} ,
+
+			handleResponse : function( response )
+			{
+				//fn.log( "handleResponse" ) ;
+				if( !response.ok )
+					throw new Error( response.statusText ) ;
+
+				if( response.headers.get("content-type").indexOf("image") !== 0 )
+					throw new Error( "http get returned a non-image response: " + response.headers.get("content-type") ) ;
+
+				fn.parseHeaders( response.headers ) ;
+
+				if( m_dx > 0 && m_canvas.width != m_dx ) m_canvas.width = m_dx ;
+				if( m_dy > 0 && m_canvas.height != m_dy ) m_canvas.height = m_dy ;
+
+				return response.blob() ;
+			} ,
+
+			handleBlob : function( blob )
+			{
+				//fn.log( "handleBlob" ) ;
+				return window.createImageBitmap( blob , 0 , 0 , m_canvas.width , m_canvas.height ) ;
+			} ,
+
+			handleBitmap : function( bitmap )
+			{
+				//fn.log( "handleBitmap" ) ;
+
+				// blit the bitmap to the canvas
+				m_context.globalCompositeOperation = 'source-over' ;
+				m_context.drawImage( bitmap , 0 , 0 ) ;
+
+				// add a text overlay
+				fn.addText( m_text ) ;
+
+				// add controls if the http headers indicate that this is a fileplayer canvas
+				m_controls.apply( m_info.type === 'fileplayer' && m_port , m_canvas , m_context , m_port ) ;
+
+				return Promise.resolve() ;
+			} ,
+
+			reschedule : function()
+			{
+				//fn.log( "reschedule" ) ;
+				window.setTimeout( fn.run , m_config.rerun_ms ) ;
+				return Promise.resolve() ;
+			} ,
+
+			handleError : function( error )
+			{
+				//fn.log( "handleError: " + error.message ) ;
+				window.setTimeout( fn.run , m_config.retry_ms ) ;
+				m_context.globalCompositeOperation = 'source-over' ;
+				m_context.fillStyle = 'grey' ;
+				m_context.fillRect( 0 , 0 , m_canvas.width , m_canvas.height ) ;
+				m_context.fillStyle = 'white' ;
+				m_context.fillText( m_url+": "+error.message , 10 , 10 ) ;
+			} ,
+
+			run : function()
+			{
+				//fn.log( "run: fetching " + m_url ) ;
+				window.fetch( m_url )
+					.then( fn.handleResponse )
+					.then( fn.handleBlob )
+					.then( fn.handleBitmap )
+					.then( fn.reschedule )
+					.catch( fn.handleError ) ;
+			}
+		} ;
+
+		return {
+			run : function()
+			{
+				fn.run() ;
+			}
+		} ;
+	} ,
+
+	onLoad : function()
+	{
+		var canvas_list = document.getElementsByClassName( "canvas" ) ;
+		for( var i = 0 ; i < canvas_list.length ; i++ )
+		{
+			VT.canvas(canvas_list[i],"/_"+i).run() ;
+		}
+		return true ;
+	}
+} ;
+
+</script>
+</head>
+<body onload="return VT.onLoad(this)">
+
+<!-- html5 canvases made active by onload() -->
+<canvas id="0" class="canvas" width="200" height="20"></canvas>
+<canvas id="1" class="canvas" width="200" height="20"></canvas>
+<canvas id="2" class="canvas" width="200" height="20"></canvas>
+<canvas id="3" class="canvas" width="200" height="20"></canvas>
+<canvas id="4" class="canvas" width="200" height="20"></canvas>
+<canvas id="5" class="canvas" width="200" height="20"></canvas>
+<canvas id="6" class="canvas" width="200" height="20"></canvas>
+<canvas id="7" class="canvas" width="200" height="20"></canvas>
+<canvas id="8" class="canvas" width="200" height="20"></canvas>
+<canvas id="9" class="canvas" width="200" height="20"></canvas>
+
+</body>
+</html>
+<!-- Copyright (C) 2017 Graeme Walker. All rights reserved. -->
