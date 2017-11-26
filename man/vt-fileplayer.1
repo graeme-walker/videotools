@@ -1,0 +1,154 @@
+.\" Copyright (C) 2017 Graeme Walker
+.\" 
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\" Copyright Graeme Walker 2017
+.TH videotools 1 "" "" "User Commands"
+.SH NAME
+vt-fileplayer \- plays back recorded video to a publication channel or into a viewer window
+.SH SYNOPSIS
+.B vt-fileplayer 
+[\fIoptions\fR] \fIdirectory
+.SY vt-fileplayer
+.OP \-\-verbose 
+.OP \-\-viewer 
+.OP \-\-interactive 
+.OP \-\-viewer-channel channel
+.OP \-\-channel channel
+.OP \-\-sleep ms
+.OP \-\-skip count
+.OP \-\-command-socket path
+.OP \-\-root path
+.OP \-\-rerootable 
+.OP \-\-stopped 
+.OP \-\-loop 
+.OP \-\-scale divisor
+.OP \-\-tz hours
+.OP \-\-match-name prefix
+.OP \-\-monochrome 
+.OP \-\-width pixels
+.OP \-\-height pixels
+.OP \-\-fade 
+.I directory
+.YS
+.SH DESCRIPTION
+Plays back recorded video to a publication channel or into a viewer window.
+.PP
+The directory specified on the command-line is a base directory where the 
+video images can be found. 
+.PP
+The base directory can also be specified using the `--root` option, in which 
+case the directory on the end of the command-line is just the starting point
+for the playback. If the `--rerootable` and `--command-socket` options are
+used then the root directory can be changed at run-time by sending an
+appropriate `move` command.
+.PP
+In interactive mode (`--interactive`) the ribbon displayed at the bottom of 
+the viewer window can be used to move forwards and backwards through the 
+day's recording. Click on the ribbon to move within the current day, or click
+on the left of the main image to go back to the previous day, or on the right
+to go forwards to the next.
+.PP
+The `--skip` option controls what proportion of images are skipped during
+playback (speeding it up), and the `--sleep` option can be used to add a 
+delay between each displayed image (slowing it down). A negative skip value
+puts the player into reverse.
+.PP
+A socket interface (`--command-socket`) can be used to allow another program
+to control the video playback. Sockets can be local-domain unix sockets or 
+UDP sockets; for UDP the socket should be like `udp://<address>:<port>`, eg. 
+`udp://0:20001`. 
+.PP
+Command messages are text datagrams in the form of a command-line, with 
+commands including `play`, `move {first|last|next|previous|.|<full-path>}`, 
+`ribbon <xpos>` and `stop`. The play command can have options of `--sleep=<ms>`, 
+`--skip=<count>`, `--forwards` and `--backwards`. The `move` command can 
+have options of `--match-name=<name>` and `--root=<root>`, although
+the `--root` option requires `--rerootable` on the program command-line.
+Multiple commands in one datagram should be separated by a semi-colon.
+.PP
+The timezone option (`--tz`) affects the ribbon at the bottom of the display 
+window so that that the marks on the ribbon can span a local calendar day 
+even with UTC recordings. It also changes the start time for each new day 
+when navigating one day at a time. A positive timezone is typically used for
+UTC recordings viewed at western longitudes.
+.PP
+If multiple recorders are using the same file store with different filename
+prefixes then the `--match-name` option can be used to disentangle the
+different recorder streams. The match name can be changed at run-time by
+using the `--match-name` option on a `move` command sent to the command 
+socket.
+.PP
+.PP
+The following command-line options can be used:
+.TP
+\fB\-\-verbose\fR
+verbose logging
+.TP
+\fB\-\-viewer\fR
+run a viewer
+.TP
+\fB\-\-interactive\fR
+respond to viewer mouse events
+.TP
+\fB\-\-viewer-channel\fR=\fIchannel
+override the default viewer channel name
+.TP
+\fB\-\-channel\fR=\fIchannel
+publish the playback video to the named channel
+.TP
+\fB\-\-sleep\fR=\fIms
+inter-frame delay time for slower playback
+.TP
+\fB\-\-skip\fR=\fIcount
+file skip factor for faster playback
+.TP
+\fB\-\-command-socket\fR=\fIpath
+socket for playback commands
+.TP
+\fB\-\-root\fR=\fIpath
+base directory
+.TP
+\fB\-\-rerootable\fR
+allow the root to be changed over the command-socket
+.TP
+\fB\-\-stopped\fR
+begin in the stopped state
+.TP
+\fB\-\-loop\fR
+loop back to the beginning when reaching the end
+.TP
+\fB\-\-scale\fR=\fIdivisor
+reduce the image size
+.TP
+\fB\-\-tz\fR=\fIhours
+timezone offset for ribbon
+.TP
+\fB\-\-match-name\fR=\fIprefix
+prefix for matching image files
+.TP
+\fB\-\-monochrome\fR
+convert to monochrome
+.TP
+\fB\-\-width\fR=\fIpixels
+output image width
+.TP
+\fB\-\-height\fR=\fIpixels
+output image height
+.TP
+\fB\-\-fade\fR
+fade image transitions
+.SH COPYRIGHT
+Copyright (c) Graeme Walker 2017 <graemewalker@sf.net>
+.PP
+This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.

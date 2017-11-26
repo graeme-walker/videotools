@@ -1,0 +1,78 @@
+.\" Copyright (C) 2017 Graeme Walker
+.\" 
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\" Copyright Graeme Walker 2017
+.TH videotools 1 "" "" "User Commands"
+.SH NAME
+vt-viewer \- reads images from a publication channel and displays them in a window
+.SH SYNOPSIS
+.B vt-viewer 
+[\fIoptions\fR] \fI{ channel | shmem-fd pipe-fd }
+.SY vt-viewer
+.OP \-\-verbose 
+.OP \-\-channel channel
+.OP \-\-scale divisor
+.OP \-\-static 
+.OP \-\-mask file
+.OP \-\-title title
+.OP \-\-quit 
+.I { channel | shmem-fd pipe-fd }
+.YS
+.SH DESCRIPTION
+Reads images from a publication channel and displays them in a window. 
+.PP
+The viewer is also used when a parent process such as a the `vt-fileplayer`
+needs a display window, and in that case the video is sent over a
+private pipe rather than a publication channel and the two file descriptors
+are passed on the command-line.
+.PP
+If there is no windowing system then the video images are displayed in the 
+terminal using text characters for pixels. It looks better if you stand
+back and squint.
+.PP
+Mouse events can be sent to a publication channel by using the `--channel` 
+option. The `vt-maskeditor` and `vt-fileplayer` programs use this feature, and 
+they have a `--viewer-channel` option to override the name of the publication 
+channel used for these mouse events.
+.PP
+A pbm-format mask file can be used to dim fixed regions of the image.
+The mask is stretched as necessary to fit the image.
+.PP
+.PP
+The following command-line options can be used:
+.TP
+\fB\-\-verbose\fR
+verbose logging
+.TP
+\fB\-\-channel\fR=\fIchannel
+publish interaction events to the named channel
+.TP
+\fB\-\-scale\fR=\fIdivisor
+reduce the image size
+.TP
+\fB\-\-static\fR
+view only the first image
+.TP
+\fB\-\-mask\fR=\fIfile
+use a mask file
+.TP
+\fB\-\-title\fR=\fItitle
+sets the window title
+.TP
+\fB\-\-quit\fR
+quit on q keypress
+.SH COPYRIGHT
+Copyright (c) Graeme Walker 2017 <graemewalker@sf.net>
+.PP
+This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.

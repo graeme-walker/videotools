@@ -1,0 +1,80 @@
+.\" Copyright (C) 2017 Graeme Walker
+.\" 
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\" Copyright Graeme Walker 2017
+.TH videotools 1 "" "" "User Commands"
+.SH NAME
+vt-rtspclient \- issues rtsp commands to control network cameras that send out their video  over rtp with h
+.SH SYNOPSIS
+.B vt-rtspclient 
+[\fIoptions\fR] \fIrtsp-url
+.SY vt-rtspclient
+.OP \-\-verbose 
+.OP \-\-port port-port
+.OP \-\-multicast address
+.OP \-\-format-file path
+.OP \-\-connection-timeout seconds
+.OP \-\-retry seconds
+.OP \-\-once 
+.I rtsp-url
+.YS
+.SH DESCRIPTION
+Issues RTSP commands to control network cameras that send out their video 
+over RTP with H.264 encoding (RTP/AVP).
+.PP
+The RTSP protocol acts as a "remote control" for video devices, so an RTSP
+client is used to ask a camera to send its RTP video stream back to a 
+particular pair of UDP ports where the RTP server is listening.
+.PP
+The RTSP client also reports on what video format the camera will send, 
+encoded as a "fmtp" string. This information can help the RTP server 
+decode the video stream. Use the `--format-file` option to make it
+available to the RTP server.
+.PP
+The RTSP protocol is similar to HTTP, and it uses the same URL syntax, with
+`rtsp://` instead of `http://` , eg. `rtsp://example.com/channel/1`. The 
+format of right hand side of the URL, following the network address, will 
+depend on the camera, so refer to its documentation.
+.PP
+The camera should send its video stream for as long as the `vt-rtspclient`
+program keeps its session open; once it terminates then the video stream from
+the camera will stop.
+.PP
+.PP
+The following command-line options can be used:
+.TP
+\fB\-\-verbose\fR
+verbose logging
+.TP
+\fB\-\-port\fR=\fIport-port
+listening port range eg. 8000-8001
+.TP
+\fB\-\-multicast\fR=\fIaddress
+multicast address eg. 224.1.1.1
+.TP
+\fB\-\-format-file\fR=\fIpath
+a file to use for storing the video format string
+.TP
+\fB\-\-connection-timeout\fR=\fIseconds
+connection timeout
+.TP
+\fB\-\-retry\fR=\fIseconds
+retry failed connections or zero to exit (default 1s)
+.TP
+\fB\-\-once\fR
+exit when the first session closes
+.SH COPYRIGHT
+Copyright (c) Graeme Walker 2017 <graemewalker@sf.net>
+.PP
+This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.

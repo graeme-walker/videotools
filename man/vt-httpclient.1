@@ -1,0 +1,96 @@
+.\" Copyright (C) 2017 Graeme Walker
+.\" 
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\" Copyright Graeme Walker 2017
+.TH videotools 1 "" "" "User Commands"
+.SH NAME
+vt-httpclient \- pulls video from a remote http server or network camera and sends it to a  publication channel or a viewer window
+.SH SYNOPSIS
+.B vt-httpclient 
+[\fIoptions\fR] \fIhttp-url
+.SY vt-httpclient
+.OP \-\-verbose 
+.OP \-\-viewer 
+.OP \-\-scale divisor
+.OP \-\-viewer-title title
+.OP \-\-watchdog-timeout seconds
+.OP \-\-request-timeout ms
+.OP \-\-channel channel
+.OP \-\-connection-timeout seconds
+.OP \-\-retry seconds
+.OP \-\-once 
+.I http-url
+.YS
+.SH DESCRIPTION
+Pulls video from a remote HTTP server or network camera and sends it to a 
+publication channel or a viewer window.
+.PP
+Uses repeated GET requests on a persistent connection, with each GET request
+separated by a configurable time delay (`--request-timeout`). A watchdog 
+timer tears down the connection if no data is received for some time and 
+then the connection is retried. Watchdog timeouts and peer disconnections 
+result in connection retries; connection failures will terminate the 
+program only if using `--retry=0`.
+.PP
+The server should normally return a mime type of `image/jpeg`, or 
+preferably `multipart/x-mixed-replace` with `image/jpeg` sub-parts.
+In the latter case the client only needs to make one GET request and
+the server determines the frame rate.
+.PP
+When getting video from a network camera the exact form of the URL to use 
+will depend on the camera, so please refer to its documentation or
+search the internet for help.
+.PP
+To get video from a remote webcam use the `vt-webcamserver` on the remote
+maching and use `vt-httpclient` to pull it across the network.
+.PP
+As a convenience, a URL of `vt://<address>` can be used instead of `http://<address>`
+and this is equivalent to `http://<address>/_?streaming=1&type=any`.
+.PP
+.PP
+The following command-line options can be used:
+.TP
+\fB\-\-verbose\fR
+verbose logging
+.TP
+\fB\-\-viewer\fR
+run a viewer
+.TP
+\fB\-\-scale\fR=\fIdivisor
+reduce the viewer image size
+.TP
+\fB\-\-viewer-title\fR=\fItitle
+viewer window title
+.TP
+\fB\-\-watchdog-timeout\fR=\fIseconds
+watchdog timeout (default 20s)
+.TP
+\fB\-\-request-timeout\fR=\fIms
+time between http get requests (default 1ms)
+.TP
+\fB\-\-channel\fR=\fIchannel
+publish to the named channel
+.TP
+\fB\-\-connection-timeout\fR=\fIseconds
+connection timeout
+.TP
+\fB\-\-retry\fR=\fIseconds
+retry failed connections or zero to exit (default 1s)
+.TP
+\fB\-\-once\fR
+exit when the first connection closes
+.SH COPYRIGHT
+Copyright (c) Graeme Walker 2017 <graemewalker@sf.net>
+.PP
+This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.

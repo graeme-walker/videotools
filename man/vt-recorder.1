@@ -1,0 +1,135 @@
+.\" Copyright (C) 2017 Graeme Walker
+.\" 
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\" Copyright Graeme Walker 2017
+.TH videotools 1 "" "" "User Commands"
+.SH NAME
+vt-recorder \- reads a video stream from a publication channel and records it to disk
+.SH SYNOPSIS
+.B vt-recorder 
+[\fIoptions\fR] \fIinput-channel base-dir
+.SY vt-recorder
+.OP \-\-verbose 
+.OP \-\-scale divisor
+.OP \-\-command-socket path
+.OP \-\-file-type type
+.OP \-\-timeout s
+.OP \-\-fast 
+.OP \-\-state state
+.OP \-\-tz hours
+.OP \-\-cache-size files
+.OP \-\-name prefix
+.OP \-\-retry timeout
+.OP \-\-once 
+.I input-channel base-dir
+.YS
+.SH DESCRIPTION
+Reads a video stream from a publication channel and records it to disk.
+.PP
+Individual video frames are stored in a directory tree, organised by date
+and time.
+.PP
+Images are recorded as fast as they are received, or once a second, or not 
+at all. These are the fast, slow and stopped states.
+.PP
+The state can be changed by sending a `fast`, `slow`, or `stopped` command 
+over the recorder's command socket (`--command-socket`).
+.PP
+The fast state is temporary unless the `--timeout` option is set to zero; 
+after recording in the fast state for a while the state drops back to the 
+previous slow or stopped state. 
+.PP
+The recorder enters the fast state on startup (`--fast`) or when it gets a 
+`fast` command over its command socket, typically sent by the `vt-watcher` 
+program. On entering the fast state any in-memory images from the last few
+seconds are also committed to disk.
+.PP
+A sub-directory called `.cache` is used to hold the recent images that have 
+not been commited to the main image store. These files are held open, and 
+they should not be accessed externally. When the recorder is triggered
+by a `fast` command on the command socket the cached files are moved
+into the main image store so that they provide a lead-in to the event
+that triggered the recording.
+.PP
+On machines with limited memory the cache size should be tuned so that
+there is no disk activity when the recorder is in the "stopped" state.
+The cache can be completely disabled by setting the cache size to zero, 
+but then there will be no lead-in to recordings triggered by an event.
+.PP
+Use `--fast --timeout=0 --cache-size=0` for continuous recording of a 
+channel.
+.PP
+The `--tz` option is the number of hours added to UTC when constructing
+file system paths under the base directory, so to get local times at western
+longitudes the value should be negative (eg. `--tz=-5`). However, if this 
+option is used inconsistently then there is a risk of overwriting or 
+corrupting old recordings, so it is safer to use UTC recordings and 
+add `--tz` adjustments elsewhere.
+.PP
+Loopback filesystems are one way to put a hard limit on disk usage. On 
+Linux do something like this as root 
+`dd if=/dev/zero of=/usr/share/recordings.img count=20000`,
+`mkfs -t ext2 -F /usr/share/recordings.img`, 
+`mkdir /usr/share/recordings`,
+`mount -o loop /usr/share/recordings.img /usr/share/recordings`,
+add add the mount to `/etc/fstab`.
+.PP
+Individual video streams should normally be recorded into their own directory
+tree, but the `--name` option allows multiple video streams to share the same
+root directory by adding a fixed prefix to every image filename. However,
+this approach does not scale well on playback, so only use it for a very
+small number of video streams.
+.PP
+.PP
+The following command-line options can be used:
+.TP
+\fB\-\-verbose\fR
+verbose logging
+.TP
+\fB\-\-scale\fR=\fIdivisor
+reduce the image size
+.TP
+\fB\-\-command-socket\fR=\fIpath
+socket for commands
+.TP
+\fB\-\-file-type\fR=\fItype
+file format: jpg, ppm, or pgm
+.TP
+\fB\-\-timeout\fR=\fIs
+fast-state timeout
+.TP
+\fB\-\-fast\fR
+start in fast state
+.TP
+\fB\-\-state\fR=\fIstate
+state when not fast (slow or stopped, slow by default)
+.TP
+\fB\-\-tz\fR=\fIhours
+timezone offset
+.TP
+\fB\-\-cache-size\fR=\fIfiles
+cache size
+.TP
+\fB\-\-name\fR=\fIprefix
+prefix for all image files (defaults to the channel name)
+.TP
+\fB\-\-retry\fR=\fItimeout
+poll for the input channel to appear
+.TP
+\fB\-\-once\fR
+exit if the input channel disappears
+.SH COPYRIGHT
+Copyright (c) Graeme Walker 2017 <graemewalker@sf.net>
+.PP
+This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.

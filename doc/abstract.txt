@@ -1,0 +1,4 @@
+VideoTools is software for video surveillance that can record, analyse 
+and replay images from webcams and network cameras. It can use 
+direcly-attached webcams or network cameras that provide JPEG or H.264 
+video streams over HTTP or RTP. VideoTools runs on Linux and BSD Unix.

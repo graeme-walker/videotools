@@ -1,0 +1,135 @@
+.\" Copyright (C) 2017 Graeme Walker
+.\" 
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\" Copyright Graeme Walker 2017
+.TH videotools 1 "" "" "User Commands"
+.SH NAME
+vt-watcher \- performs motion detection on a video stream received over a shared-memory  publication channel
+.SH SYNOPSIS
+.B vt-watcher 
+[\fIoptions\fR] \fIinput-channel
+.SY vt-watcher
+.OP \-\-verbose 
+.OP \-\-viewer 
+.OP \-\-viewer-title title
+.OP \-\-mask file
+.OP \-\-scale divisor
+.OP \-\-event-channel channel
+.OP \-\-image-channel channel
+.OP \-\-recorder path
+.OP \-\-squelch luma
+.OP \-\-threshold pixels
+.OP \-\-interval ms
+.OP \-\-once 
+.OP \-\-equalise 
+.OP \-\-command-socket path
+.OP \-\-plain 
+.OP \-\-repeat-timeout seconds
+.I input-channel
+.YS
+.SH DESCRIPTION
+Performs motion detection on a video stream received over a shared-memory 
+publication channel.
+.PP
+If motion detection exceeds some threshold then an event is published on the 
+`--event-channel` channel as a json formatted text message. These messages are 
+normally read by a `vt-alarm` process that can run other external programs.
+.PP
+Motion detection events can also be used to control a `vt-recorder` process
+by sending a `fast` command to the recorder's command socket.
+.PP
+The `--viewer` or `--image-channel` options can be used to visualise the 
+motion detection. The viewer window shows in green the pixels that change in 
+brightness by more than the "squelch" value, and it also shows in red the 
+pixels that are ignored as the result of the mask.
+.PP
+The motion detection algorithm is extremely simple; one video frame is 
+compared to the next, and pixels that change their brightness more that the 
+squelch value (0..255) are counted up, and if the total count is more than 
+the given threshold value then a motion detection event is emitted.
+.PP
+The `--scale` option also has an important effect because it increases the
+size of the motion detection pixels (by decreasing the resolution of the 
+image), and it affects the interpretation of the threshold value.
+.PP
+Histogram equalisation is enabled with the `--equalise` option and this can
+be particularly useful for cameras that loose contrast in infra-red mode.
+.PP
+The command socket, enabled with the `--command-socket` option, accepts
+`squelch`, `threshold` and `equalise` commands. Multiple commands can
+be sent in one datagram by using semi-colon separators.
+.PP
+The squelch and threshold values have default values that will need
+fine-tuning for your camera. This can be done interactively by temporarily
+using the `--verbose`, `--viewer` and `--command-socket` options, and then 
+sending `squelch`, `threshold` and `equalise` commands to the command socket
+with the `vt-socket` tool (eg. `vt-watcher -C cmd --viewer -v <channel>`
+and `vt-socket cmd squelch=20\;threshold=1\;equalise=off`).
+Adjust the squelch value to eliminate the green highlights when there is 
+no motion. Repeat in different lighting conditions.
+.PP
+.PP
+The following command-line options can be used:
+.TP
+\fB\-\-verbose\fR
+verbose logging
+.TP
+\fB\-\-viewer\fR
+run a viewer
+.TP
+\fB\-\-viewer-title\fR=\fItitle
+viewer window title
+.TP
+\fB\-\-mask\fR=\fIfile
+use a mask file
+.TP
+\fB\-\-scale\fR=\fIdivisor
+reduce the image size
+.TP
+\fB\-\-event-channel\fR=\fIchannel
+publish analysis events to the named channel
+.TP
+\fB\-\-image-channel\fR=\fIchannel
+publish analysis images to the named channel
+.TP
+\fB\-\-recorder\fR=\fIpath
+recorder socket path
+.TP
+\fB\-\-squelch\fR=\fIluma
+pixel change threshold (0 to 255) (default 50)
+.TP
+\fB\-\-threshold\fR=\fIpixels
+pixel count threshold for changed pixels per image (default 100)
+.TP
+\fB\-\-interval\fR=\fIms
+minimum time interval between comparisons (default 250)
+.TP
+\fB\-\-once\fR
+exit if the watched channel is unavailable
+.TP
+\fB\-\-equalise\fR
+histogram equalisation
+.TP
+\fB\-\-command-socket\fR=\fIpath
+socket for update commands
+.TP
+\fB\-\-plain\fR
+do not show changed-pixel highlights in output images
+.TP
+\fB\-\-repeat-timeout\fR=\fIseconds
+send events repeatedly with the given period
+.SH COPYRIGHT
+Copyright (c) Graeme Walker 2017 <graemewalker@sf.net>
+.PP
+This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
