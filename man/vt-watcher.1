@@ -20,6 +20,7 @@ vt-watcher \- performs motion detection on a video stream received over a shared
 .B vt-watcher 
 [\fIoptions\fR] \fIinput-channel
 .SY vt-watcher
+.OP \-\-log-threshold 
 .OP \-\-verbose 
 .OP \-\-viewer 
 .OP \-\-viewer-title title
@@ -82,6 +83,9 @@ no motion. Repeat in different lighting conditions.
 .PP
 The following command-line options can be used:
 .TP
+\fB\-\-log-threshold\fR
+threshold for logging motion detection events
+.TP
 \fB\-\-verbose\fR
 verbose logging
 .TP
@@ -107,10 +111,10 @@ publish analysis images to the named channel
 recorder socket path
 .TP
 \fB\-\-squelch\fR=\fIluma
-pixel change threshold (0 to 255) (default 50)
+pixel value change threshold (0 to 255) (default 50)
 .TP
 \fB\-\-threshold\fR=\fIpixels
-pixel count threshold for changed pixels per image (default 100)
+pixel count threshold in changed pixels per image (default 100)
 .TP
 \fB\-\-interval\fR=\fIms
 minimum time interval between comparisons (default 250)

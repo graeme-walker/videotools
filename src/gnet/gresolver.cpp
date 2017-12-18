@@ -375,7 +375,7 @@ GNet::Resolver::~Resolver()
 	if( m_busy && ResolverImp::count() < sanity_limit )
 	{
 		// release the imp to an independent lifetime until its getaddrinfo() completes
-		G_ASSERT( m_imp != nullptr ) ;
+		G_ASSERT( m_imp.get() != nullptr ) ;
 		G_DEBUG( "GNet::Resolver::dtor: releasing still-busy thread: " << ResolverImp::count() ) ;
 		m_imp->disarm( true ) ;
 		m_imp.release() ; 

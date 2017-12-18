@@ -161,7 +161,7 @@ const char * GNet::Address6::setHostAddress( union_type & inet , const std::stri
 			setZone( inet , zone_id ) ; // sin6_scope_id
 	}
 
-	return rc == 1 ? nullptr : "invalid ipv6 network address" ;
+	return rc == 1 ? nullptr : "invalid network address" ;
 }
 
 void GNet::Address6::setPort( unsigned int port )

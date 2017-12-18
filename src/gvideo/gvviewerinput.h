@@ -114,9 +114,8 @@ private:
 	virtual void readEvent() override ;
 	virtual void onException( std::exception & ) override ;
 	static Gr::ImageType subsample( std::vector<char> & , const Gr::ImageType & , int , bool , bool ) ;
-	void onTimeout() ;
-
-private:
+	void onRateTimeout() ;
+	void onQuiescentTimeout() ;
 	bool read( std::vector<char> & ) ;
 	bool decode() ;
 
@@ -134,7 +133,8 @@ public:
 	Gr::ImageType m_type_in ;
 	std::string m_type_in_str ;
 	Gr::ImageType m_type_out ; // raw
-	GNet::Timer<ViewerInput> m_timer ;
+	GNet::Timer<ViewerInput> m_rate_timer ;
+	GNet::Timer<ViewerInput> m_quiescent_timer ;
 	Gr::ImageData m_decoder_tmp ;
 	Gr::ImageDecoder m_decoder ;
 	char * m_data_out ;

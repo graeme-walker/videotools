@@ -21,10 +21,6 @@
 #include "gdef.h"
 #include "gexception.h"
 
-G::Exception::Exception()
-{
-}
-
 G::Exception::Exception( const char * what ) :
 	m_what(what?what:"")
 {

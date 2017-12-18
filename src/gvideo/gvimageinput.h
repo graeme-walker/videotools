@@ -106,11 +106,12 @@ private:
 } ;
 
 /// \class Gv::ImageInputSource
-/// A base class for distributing incoming images to multiple client objects,
-/// supporting some simple image type conversions. Derived classes emit images
-/// by calling sendImageInput(). Client objects register an interest by calling 
-/// addImageInputHandler(), and they implement imageInputConversion() to indicate 
-/// the image format they require. 
+/// A base class for distributing incoming images to multiple client 
+/// objects, supporting some simple image type conversions. Derived 
+/// classes emit images by calling sendImageInput(). Client objects 
+/// register an interest by calling addImageInputHandler(), and they 
+/// implement imageInputConversion() to indicate the image format 
+/// they require. 
 /// 
 class Gv::ImageInputSource
 {

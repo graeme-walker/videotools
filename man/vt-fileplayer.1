@@ -85,9 +85,10 @@ UTC recordings viewed at western longitudes.
 .PP
 If multiple recorders are using the same file store with different filename
 prefixes then the `--match-name` option can be used to disentangle the
-different recorder streams. The match name can be changed at run-time by
-using the `--match-name` option on a `move` command sent to the command 
-socket.
+different recorder streams. Note that this is not the recommended because 
+it does not scale well and it can lead to crazy-slow startup while looking 
+for a matching file. The match name can be changed at run-time by using the
+`--match-name` option on a `move` command sent to the command socket.
 .PP
 .PP
 The following command-line options can be used:

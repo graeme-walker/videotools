@@ -22,6 +22,8 @@ vt-alarm \- monitors a watcher's output channel and runs an external command on 
 .SY vt-alarm
 .OP \-\-verbose 
 .OP \-\-threshold pixels
+.OP \-\-shell 
+.OP \-\-url-decode 
 .I event-channel [command [arg ...]]
 .YS
 .SH DESCRIPTION
@@ -35,6 +37,10 @@ like "aplay".
 If the `--run-as` option is given then the external command runs with
 that account's user-id and group-id if possible.
 .PP
+If you need pipes, backticks, file redirection, etc. in your external 
+command then add the "--shell" option. Awkward shell escapes can 
+avoided by using "--url-decode".
+.PP
 .PP
 The following command-line options can be used:
 .TP
@@ -43,6 +49,12 @@ verbose logging
 .TP
 \fB\-\-threshold\fR=\fIpixels
 alarm threshold in pixels per image
+.TP
+\fB\-\-shell\fR
+use '/bin/sh -c'
+.TP
+\fB\-\-url-decode\fR
+treat the command as url-encoded
 .SH COPYRIGHT
 Copyright (c) Graeme Walker 2017 <graemewalker@sf.net>
 .PP

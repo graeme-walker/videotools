@@ -600,7 +600,7 @@ Gv::ImageInputConversion Gv::HttpServerPeer::imageInputConversion( ImageInputSou
 
 void Gv::HttpServerPeer::onDelete( const std::string & reason )
 {
-	if( reason.find("peer disconnected") != 0U )
+	if( !reason.empty() && reason.find("peer disconnected") != 0U )
 		G_ERROR( "Gv::HttpServerPeer::onException: exception: " << reason ) ;
 	G_LOG( "Gv::HttpServerPeer::onDelete: disconnection of " << peerAddress().second.displayString() ) ;
 }

@@ -147,9 +147,10 @@ public:
 		///< Returns true if the display string is valid. This can be used 
 		///< to avoid exceptions from the relevant constructor.
 
-	static bool validStrings( const std::string & display_string , const std::string & port_string , std::string * reason = nullptr ) ;
-		///< Returns true if the display string is valid. This can be used 
-		///< to avoid exceptions from the relevant constructor.
+	static bool validStrings( const std::string & ip , const std::string & port_string , std::string * reason = nullptr ) ;
+		///< Returns true if the combined ip address string and port string 
+		///< is valid. This can be used to avoid exceptions from the relevant 
+		///< constructor.
 
 	static bool validData( const sockaddr * , socklen_t len ) ;
 		///< Returns true if the sockaddr data is valid. This can be used 
@@ -180,6 +181,9 @@ public:
 		///< Returns the address family.
 
 	bool operator==( const Address & ) const ;
+		///< Comparison operator.
+
+	bool operator!=( const Address & ) const ;
 		///< Comparison operator.
 
 private:

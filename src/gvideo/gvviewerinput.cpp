@@ -34,7 +34,8 @@ Gv::ViewerInput::ViewerInput( ViewerInputHandler & input_handler , const ViewerI
 		m_static(input_config.m_static) ,
 		m_first(true),
 		m_rate_limit(input_config.m_rate_limit) ,
-		m_timer(*this,&ViewerInput::onTimeout,*this) ,
+		m_rate_timer(*this,&ViewerInput::onRateTimeout,*this) ,
+		m_quiescent_timer(*this,&ViewerInput::onQuiescentTimeout,*this) ,
 		m_decoder_tmp(Gr::ImageData::Contiguous) ,
 		m_data_out(nullptr)
 {
@@ -45,6 +46,7 @@ Gv::ViewerInput::ViewerInput( ViewerInputHandler & input_handler , const ViewerI
 	}
 	else
 	{
+		m_quiescent_timer.startTimer( 2U ) ;
 		m_channel.reset( new G::PublisherSubscription(channel) ) ;
 		m_fd = m_channel->fd() ;
 	}
@@ -63,6 +65,7 @@ void Gv::ViewerInput::onException( std::exception & )
 
 void Gv::ViewerInput::readEvent()
 {
+	m_quiescent_timer.cancelTimer() ;
 	if( m_static && !m_first ) 
 	{
 		read( m_tmp ) ; // client only wants the first image -- clear the event and discard the data
@@ -104,15 +107,25 @@ bool Gv::ViewerInput::read( std::vector<char> & buffer )
 	{
 		G_DEBUG( "Gv::ViewerInput::read: rate limiting: dropping fd " << m_fd ) ;
 		GNet::EventLoop::instance().dropRead( GNet::Descriptor(m_fd) ) ;
-		m_timer.startTimer( m_rate_limit.s , m_rate_limit.us ) ;
+		m_rate_timer.startTimer( m_rate_limit.s , m_rate_limit.us ) ;
 	}
 	return ok ;
 }
 
-void Gv::ViewerInput::onTimeout()
+void Gv::ViewerInput::onRateTimeout()
 {
-	G_DEBUG( "Gv::ViewerInput::onTimeout: rate limiting: resuming fd " << m_fd ) ;
+	G_DEBUG( "Gv::ViewerInput::onRateTimeout: rate limiting: resuming fd " << m_fd ) ;
 	GNet::EventLoop::instance().addRead( GNet::Descriptor(m_fd) , *this ) ;
+}
+
+void Gv::ViewerInput::onQuiescentTimeout()
+{
+	G_ASSERT( m_channel.get() != nullptr ) ;
+	unsigned int age = m_channel->age() ;
+	std::ostringstream ss ;
+	if( age > 1U )
+		ss << ": idle for " << age << "s" ;
+	G_WARNING( "Gv::ViewerInput::onQuiescentTimeout: quiescent channel [" << m_channel->name() << "]" << ss.str() ) ;
 }
 
 bool Gv::ViewerInput::decode()

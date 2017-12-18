@@ -117,7 +117,7 @@ public:
 	void removeAt( size_type option_index , size_type option_args = 0U ) ;
 		///< Removes the given argument and the following 'option_args' ones.
 
-	StringArray array() const ;
+	StringArray array( unsigned int shift = 0U ) const ;
 		///< Returns the arguments a string array, including the program name 
 		///< in the first position.
 

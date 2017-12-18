@@ -35,9 +35,9 @@ namespace ColourSpace
 struct range_y
 {
 	typedef unsigned char value_type ;
-	static constexpr value_type min = 16 ; // black
-	static constexpr value_type max = 235 ; // white
-	static constexpr bool is_signed = 0 ;
+	static g__constexpr value_type min = 16 ; // black
+	static g__constexpr value_type max = 235 ; // white
+	static g__constexpr bool is_signed = 0 ;
 } ;
 
 /// \class Gr::ColourSpace::range_uv
@@ -47,9 +47,9 @@ struct range_y
 struct range_uv
 {
 	typedef unsigned char value_type ;
-	static constexpr value_type min = 16 ;
-	static constexpr value_type max = 240 ;
-	static constexpr bool is_signed = 1 ;
+	static g__constexpr value_type min = 16 ;
+	static g__constexpr value_type max = 240 ;
+	static g__constexpr bool is_signed = 1 ;
 } ;
 
 /// \class Gr::ColourSpace::range_rgb
@@ -60,9 +60,9 @@ struct range_uv
 struct range_rgb
 {
 	typedef unsigned char value_type ;
-	static constexpr value_type min = 0 ;
-	static constexpr value_type max = 255 ;
-	static constexpr bool is_signed = 0 ;
+	static g__constexpr value_type min = 0 ;
+	static g__constexpr value_type max = 255 ;
+	static g__constexpr bool is_signed = 0 ;
 } ;
 
 }

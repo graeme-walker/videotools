@@ -31,7 +31,7 @@ namespace ColourSpace
 /// Does min/max clamping.
 /// 
 template <typename T>
-constexpr
+g__constexpr
 T clamp( T min , T value , T max )
 {
 	return value < min ? min : ( value > max ? max : value ) ;
@@ -40,7 +40,7 @@ T clamp( T min , T value , T max )
 /// Does min/max clamping to a range.
 /// 
 template <typename Trange, typename Tout, typename Tin>
-constexpr
+g__constexpr
 Tout clamp( Tin value )
 {
 	return static_cast<Tout>(clamp(static_cast<Tin>(Trange::min),value,static_cast<Tin>(Trange::max))) ;
@@ -49,7 +49,7 @@ Tout clamp( Tin value )
 /// Scales an unsigned fp value to another fp value in the relevant range.
 /// 
 template <typename Trange, typename Tconverter>
-constexpr
+g__constexpr
 typename Tconverter::fp_type map_to_range_from_unsigned( typename Tconverter::fp_type fp ) g__noexcept
 {
 	typedef typename Tconverter::fp_type fp_t ;
@@ -59,7 +59,7 @@ typename Tconverter::fp_type map_to_range_from_unsigned( typename Tconverter::fp
 /// Scales a signed fp value to another fp value in the relevant range.
 /// 
 template <typename Trange, typename Tconverter>
-constexpr
+g__constexpr
 typename Tconverter::fp_type map_to_range_from_signed( typename Tconverter::fp_type fp ) g__noexcept
 {
 	return map_to_range_from_unsigned<Trange,Tconverter>( fp + Tconverter::make_half() ) ;
@@ -68,7 +68,7 @@ typename Tconverter::fp_type map_to_range_from_signed( typename Tconverter::fp_t
 /// Scales an fp value to another fp value in the relevant range.
 /// 
 template <typename Trange, typename Tconverter>
-constexpr
+g__constexpr
 typename Tconverter::fp_type map_to_range_imp( typename Tconverter::fp_type fp ) g__noexcept
 {
 	return 
@@ -80,7 +80,7 @@ typename Tconverter::fp_type map_to_range_imp( typename Tconverter::fp_type fp )
 /// Maps an "analogue" space value to a "digial" range value.
 /// 
 template <typename Trange, typename Tconverter>
-constexpr
+g__constexpr
 typename Trange::value_type map_to_range( typename Tconverter::fp_type fp ) g__noexcept
 {
 	typedef typename Tconverter::fp_type fp_t ;
@@ -92,7 +92,7 @@ typename Trange::value_type map_to_range( typename Tconverter::fp_type fp ) g__n
 /// Maps a "digital" range value to a signed "analogue" space value.
 /// 
 template <typename Trange, typename Tconverter>
-constexpr
+g__constexpr
 typename Tconverter::fp_type map_to_space_signed( typename Trange::value_type n ) g__noexcept
 {
 	typedef typename Tconverter::fp_type fp_t ;
@@ -102,7 +102,7 @@ typename Tconverter::fp_type map_to_space_signed( typename Trange::value_type n 
 /// Maps a "digital" range value to an unsigned "analogue" space value.
 /// 
 template <typename Trange, typename Tconverter>
-constexpr
+g__constexpr
 typename Tconverter::fp_type map_to_space_unsigned( typename Trange::value_type n ) g__noexcept
 {
 	typedef typename Tconverter::fp_type fp_t ;
@@ -112,7 +112,7 @@ typename Tconverter::fp_type map_to_space_unsigned( typename Trange::value_type 
 /// Maps a "digital" range value to an "analogue" space value.
 /// 
 template <typename Trange, typename Tconverter>
-constexpr
+g__constexpr
 typename Tconverter::fp_type map_to_space_imp( typename Trange::value_type n ) g__noexcept
 {
 	return 
@@ -124,7 +124,7 @@ typename Tconverter::fp_type map_to_space_imp( typename Trange::value_type n ) g
 /// Maps a "digital" range triple to an "analogue" space triple.
 /// 
 template <typename Tconverter, typename Trange1, typename Trange2, typename Trange3>
-constexpr
+g__constexpr
 triple<typename Tconverter::fp_type> map_to_space( triple<typename Trange1::value_type> t ) g__noexcept
 {
 	typedef typename Tconverter::fp_type fp_t ;

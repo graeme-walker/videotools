@@ -75,8 +75,8 @@ public:
 		///< Uses specifications like "p!port!defines the port number!!1!port!1|v!verbose!shows more logging!!0!!1"
 		///< made up of (1) an optional single-character-option-letter, (2) a multi-character-option-name
 		///< (3) an option-description, (4) optional option-description-extra text, (5) a value-type
-		///< (with 0 for unvalued, 1 for a string value, and 2 for a comma-separated list), 
-		///< (6) a value-description (unless unvalued), and (7) a level enumeration.
+		///< (with 0 for unvalued, 1 for a string value, and 2 for a comma-separated list (possibly
+		///< multiple times)) or (6) a value-description (unless unvalued), and (7) a level enumeration.
 		///< 
 		///< By convention mainstream options should have a level of 1, and obscure ones level 2 and above. 
 		///< If the option-description field is empty or if the level is zero then the option is hidden.

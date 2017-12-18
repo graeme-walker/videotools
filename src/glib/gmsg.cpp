@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "gmsg.h"
+#include "gprocess.h"
 #include "gstr.h"
 #include <cstring> // memcpy
 #include <stdexcept>
@@ -35,12 +36,12 @@ ssize_t G::Msg::send( int fd , const void * buffer , size_t size , int flags ,
 }
 
 ssize_t G::Msg::sendto( int fd , const void * buffer , size_t size , int flags , 
-	sockaddr * address_p , socklen_t address_n , int fd_to_send )
+	const sockaddr * address_p , socklen_t address_n , int fd_to_send )
 {
 	static struct ::msghdr msg_zero ;
 	struct ::msghdr msg = msg_zero ;
 
-	msg.msg_name = address_p ;
+	msg.msg_name = const_cast<sockaddr*>(address_p) ;
 	msg.msg_namelen = address_n ;
 
 	static struct ::iovec io_zero ;
@@ -75,17 +76,17 @@ ssize_t G::Msg::sendto( int fd , const void * buffer , size_t size , int flags ,
 ssize_t G::Msg::recv( int fd , void * buffer , size_t size , int flags , 
 	int * fd_received_p )
 {
-	return recvfrom( fd , buffer , size , flags , nullptr , 0U , fd_received_p ) ;
+	return recvfrom( fd , buffer , size , flags , nullptr , nullptr , fd_received_p ) ;
 }
 
 ssize_t G::Msg::recvfrom( int fd , void * buffer , size_t size , int flags ,
-	sockaddr * address_p , socklen_t address_n , int * fd_received_p )
+	sockaddr * address_p , socklen_t * address_np , int * fd_received_p )
 {
 	static struct ::msghdr msg_zero ;
 	struct ::msghdr msg = msg_zero ;
 
 	msg.msg_name = address_p ;
-	msg.msg_namelen = address_n ;
+	msg.msg_namelen = address_np == nullptr ? socklen_t(0) : *address_np ;
 
 	struct ::iovec io ;
 	io.iov_base = buffer ;
@@ -98,12 +99,20 @@ ssize_t G::Msg::recvfrom( int fd , void * buffer , size_t size , int flags ,
 	msg.msg_controllen = sizeof(control_buffer) ;
 
 	ssize_t rc = ::recvmsg( fd , &msg , flags ) ;
+	int e = G::Process::errno_() ;
 	if( rc >= 0 && msg.msg_controllen > 0U && fd_received_p != nullptr )
 	{
 		struct cmsghdr * cmsg = CMSG_FIRSTHDR( &msg ) ;
 		if( cmsg != nullptr && cmsg->cmsg_type == SCM_RIGHTS )
+		{
 			std::memcpy( fd_received_p , CMSG_DATA(cmsg) , sizeof(int) ) ;
+		}
 	}
+	if( rc >= 0 && address_np != nullptr )
+	{
+		*address_np = msg.msg_namelen ;
+	}
+	G::Process::errno_( G::SignalSafe() , e ) ;
 	return rc ; // with errno
 }
 

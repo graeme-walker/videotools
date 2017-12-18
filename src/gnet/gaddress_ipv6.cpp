@@ -139,6 +139,11 @@ bool GNet::Address::operator==( const Address & other ) const
 		( m_6imp && other.m_6imp && m_6imp->same(*other.m_6imp) ) ;
 }
 
+bool GNet::Address::operator!=( const Address & other ) const
+{
+	return !( *this == other ) ;
+}
+
 bool GNet::Address::sameHostPart( const Address & other ) const
 {
 	return 

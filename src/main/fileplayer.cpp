@@ -60,9 +60,10 @@
 //
 // If multiple recorders are using the same file store with different filename
 // prefixes then the `--match-name` option can be used to disentangle the
-// different recorder streams. The match name can be changed at run-time by
-// using the `--match-name` option on a `move` command sent to the command 
-// socket.
+// different recorder streams. Note that this is not the recommended because 
+// it does not scale well and it can lead to crazy-slow startup while looking 
+// for a matching file. The match name can be changed at run-time by using the
+// `--match-name` option on a `move` command sent to the command socket.
 //
 // usage: fileplayer [--viewer] [--channel=<channel>] [--sleep=<ms>] 
 //          [--skip=<count>] [--loop] [--root=<root>] <dir>
@@ -135,9 +136,13 @@ public:
 	explicit FileTreeIgnore( const std::string & match_name ) ;
 	virtual bool directoryTreeIgnore( const G::DirectoryList::Item & , size_t ) override ;
 	void set( const std::string & match_name ) ;
+	void disarm() ;
 
 private:
 	std::string m_match_name ;
+	G::EpochTime m_time_limit ;
+	size_t m_count ;
+	bool m_armed ;
 } ;
 
 class ImageFader : private GNet::EventExceptionHandler
@@ -362,6 +367,7 @@ FilePlayer::FilePlayer( const G::Path & root , const G::Path & path , bool reroo
 		m_file_timer(*this,&FilePlayer::onFileTimeout,*this) ,
 		m_command_socket(command_socket)
 {
+	m_tree_ignore.disarm() ;
 	G_LOG( "FilePlayer::ctor: root=[" << root << "] start=[" << path << "]" ) ;
 
 	if( channel.empty() || with_viewer )
@@ -1221,14 +1227,40 @@ const std::string & RibbonConfig::matchName() const
 // ==
 
 FileTreeIgnore::FileTreeIgnore( const std::string & match_name ) :
-	m_match_name(match_name)
+	m_match_name(match_name) ,
+	m_time_limit(G::DateTime::now()+3U) ,
+	m_count(0U) ,
+	m_armed(true)
 {
 }
 
 bool FileTreeIgnore::directoryTreeIgnore( const G::DirectoryList::Item & item , size_t )
 {
-	return item.m_name.find('.') == 0U || 
+	const bool ignore =
+		item.m_name.find('.') == 0U || 
 		( !m_match_name.empty() && !item.m_is_dir && item.m_name.find(m_match_name) != 0U ) ;
+
+	if( ignore && m_armed )
+	{
+		m_count++ ;
+		if( (m_count%100U) == 0U )
+		{
+			G::EpochTime now = G::DateTime::now() ;
+			if( now > m_time_limit )
+			{
+				G_WARNING( "FileTreeIgnore::directoryTreeIgnore: no files matching [" 
+					<< m_match_name << "] in the first " << m_count ) ;
+				m_time_limit = now + 3U ;
+			}
+		}
+	}
+
+	return ignore ;
+}
+
+void FileTreeIgnore::disarm()
+{
+	m_armed = false ;
 }
 
 void FileTreeIgnore::set( const std::string & match_name )

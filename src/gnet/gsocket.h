@@ -292,19 +292,17 @@ public:
 		///< Override from Socket::write().
 
 	ssize_type readfrom( char * buffer , size_type len , Address & src ) ; 
-		///< Reads a datagram and returns the sender's address
-		///< by reference. If connect() has been used then
-		///< only datagrams from the address specified in the
-		///< connect() call will be received.
+		///< Reads a datagram and returns the sender's address by reference. 
+		///< If connect() has been used then only datagrams from the address 
+		///< specified in the connect() call will be received.
 
 	ssize_type writeto( const char * buffer , size_type len , const Address & dst ) ; 
-		///< Sends a datagram to the given address. This should 
-		///< be used if there is no connect() assocation in effect.
+		///< Sends a datagram to the given address. This should be used
+		///< if there is no connect() assocation in effect.
 
 	void disconnect() ;
-		///< Releases the association between two
-		///< datagram endpoints reversing the effect
-		///< of the previous Socket::connect().
+		///< Releases the association between two datagram endpoints 
+		///< reversing the effect of the previous Socket::connect().
 
 private:
 	DatagramSocket( const DatagramSocket & ) ; // not implemented
@@ -312,4 +310,3 @@ private:
 } ;
 
 #endif
-

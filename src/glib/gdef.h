@@ -338,6 +338,9 @@
 	#if !defined(GCONFIG_HAVE_IP_MREQN)
 		#define GCONFIG_HAVE_IP_MREQN ( defined(G_UNIX_LINUX) || defined(G_UNIX_FREEBSD) )
 	#endif
+	#if !defined(GCONFIG_HAVE_EXECVPE)
+		#define GCONFIG_HAVE_EXECVPE defined(G_UNIX_LINUX)
+	#endif
 
 	/* Include main o/s headers
 	 */
@@ -558,9 +561,11 @@
 			#endif
 		#endif
 
-		#if ! GCONFIG_HAVE_CXX_CONSTEXPR
+		#if GCONFIG_HAVE_CXX_CONSTEXPR
+			#define g__constexpr constexpr
+		#else
 			/* for in-class initialisation of static integer-type constants only */
-			#define constexpr const
+			#define g__constexpr const
 		#endif
 
 		#if GCONFIG_HAVE_CXX_NOEXCEPT

@@ -27,6 +27,10 @@
 // If the `--run-as` option is given then the external command runs with
 // that account's user-id and group-id if possible.
 //
+// If you need pipes, backticks, file redirection, etc. in your external 
+// command then add the "--shell" option. Awkward shell escapes can 
+// avoided by using "--url-decode".
+//
 // usage: alarm [<options>] <event-channel> [<command> [<arg> ...]]
 //
 
@@ -34,6 +38,7 @@
 #include "gnewprocess.h"
 #include "gidentity.h"
 #include "gpublisher.h"
+#include "gurl.h"
 #include "garg.h"
 #include "ggetopt.h"
 #include "gvstartup.h"
@@ -76,19 +81,42 @@ EventInfo::EventInfo( const std::string & s ) :
 	}
 }
 
-static std::pair<int,std::string> runImp( G::Identity run_as , const G::Path & exe , const G::StringArray & command )
+static std::pair<int,std::string> runImp( G::Identity run_as , G::StringArray command )
 {
-	G_LOG( "run: running [" << exe << "] [" << G::Str::join("|",command) << "]" ) ;
+	G_LOG( "run: running [" << G::Str::join("][",command) << "]" ) ;
+	if( command.empty() ) throw std::runtime_error( "invalid empty command" ) ;
+	G::Path exe = command.at(0U) ;
+	command.erase( command.begin() ) ;
 	G::NewProcess child( exe , command , 2 , false , false , run_as , false , 127 , "exec failed: __""strerror""__" ) ;
 	int rc = child.wait().run().get() ;
-	std::string output = child.read() ;
+	std::string output = child.wait().output() ;
 	output = G::Str::printable( G::Str::head( G::Str::trimmed(output,G::Str::ws()) , "\n" , false ) ) ;
 	return std::make_pair( rc , output ) ;
 }
 
-static void run( G::Identity run_as , const G::Path & exe , const G::StringArray & command )
+static std::pair<int,std::string> runImp( bool url_decode , bool shell , G::Identity run_as , G::StringArray command )
 {
-	std::pair<int,std::string> result = runImp( run_as , exe , command ) ;
+	if( shell )
+	{
+		G::StringArray shell_command ;
+		shell_command.push_back( "/bin/sh" ) ;
+		shell_command.push_back( "-c" ) ;
+		shell_command.push_back( url_decode ? G::Url::decode(G::Str::join("+",command)) : G::Str::join(" ",command) ) ;
+		return runImp( run_as , shell_command ) ;
+	}
+	else if( url_decode )
+	{
+		return runImp( run_as , G::Str::splitIntoTokens(G::Url::decode(G::Str::join("+",command))," ") ) ;
+	}
+	else
+	{
+		return runImp( run_as , command ) ;
+	}
+}
+
+static void run( bool url_decode , bool shell , G::Identity run_as , const G::StringArray & command )
+{
+	std::pair<int,std::string> result = runImp( url_decode , shell , run_as , command ) ;
 
 	std::ostringstream ss ;
 	ss << "command exit " << result.first ;
@@ -118,6 +146,8 @@ int main( int argc , char * argv [] )
 			"P!pid-file!write process id to file!!1!path!2" "|"
 			"v!verbose!verbose logging!!0!!1" "|"
 			"A!threshold!alarm threshold! in pixels per image!1!pixels!1" "|"
+			"S!shell!use '/bin/sh -c'!!0!!1" "|"
+			"E!url-decode!treat the command as url-encoded!!0!!1" "|"
 			"!test!!!0!!0" "|"
 		) ;
 		std::string args_help = "<event-channel> [<command> [<arg> ...]]" ;
@@ -127,17 +157,20 @@ int main( int argc , char * argv [] )
 			unsigned int threshold = G::Str::toUInt( opt.value("threshold","0") ) ;
 			std::string channel_name = opt.args().v(1U) ;
 			G::Identity run_as = opt.contains("run-as") ? G::Identity(opt.value("run-as")) : G::Identity::invalid() ;
+			bool shell = opt.contains("shell") ;
+			bool url_decode = opt.contains("url-decode") ;
 
 			G::StringArray command = opt.args().array() ; 
 			command.erase( command.begin() , command.begin()+2U ) ; // remove program name and channel name
 
-			G::Path exe = command.at( 0U ) ;
-			command.erase( command.begin() , command.begin()+1U ) ;
-			if( exe == G::Path() )
-				throw std::runtime_error( "invalid empty command" ) ;
-
-			if( exe.isRelative() && opt.contains("daemon") )
-				G_WARNING( "alarm: relative path used with \"--daemon\": beware of cwd changes" ) ;
+			if( !shell && !url_decode )
+			{
+				G::Path exe = command.at( 0U ) ;
+				if( exe == G::Path() )
+					throw std::runtime_error( "invalid empty command" ) ;
+				if( exe.isRelative() && opt.contains("daemon") )
+					G_WARNING( "alarm: relative path [" << exe << "] used with \"--daemon\": beware of cwd changes" ) ;
+			}
  
 			G::PublisherSubscription channel( channel_name ) ;
 	
@@ -145,7 +178,7 @@ int main( int argc , char * argv [] )
 
 			if( opt.contains("test") )
 			{
-				std::pair<int,std::string> result = runImp( run_as , exe , command ) ;
+				std::pair<int,std::string> result = runImp( url_decode , shell , run_as , command ) ;
 				std::cout << "exit=" << result.first << " stderr=[" << result.second << "]\n" ;
 				throw Gv::Exit( 0 ) ;
 			}
@@ -162,7 +195,7 @@ int main( int argc , char * argv [] )
 					EventInfo event_info( event ) ;
 					if( event_info.valid() && event_info.count() >= threshold )
 					{
-						run( run_as , exe , command ) ;
+						run( url_decode , shell , run_as , command ) ;
 					}
 				}
 			}

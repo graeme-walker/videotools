@@ -517,6 +517,10 @@ like "aplay".
 If the `--run-as` option is given then the external command runs with
 that account's user-id and group-id if possible.
 
+If you need pipes, backticks, file redirection, etc. in your external 
+command then add the "--shell" option. Awkward shell escapes can 
+avoided by using "--url-decode".
+
 ### Usage
 
 	vt-alarm [<options>] <event-channel> [<command> [<arg> ...]]
@@ -525,6 +529,8 @@ that account's user-id and group-id if possible.
 
 	--verbose             verbose logging
 	--threshold=<pixels>  alarm threshold in pixels per image
+	--shell               use '/bin/sh -c'
+	--url-decode          treat the command as url-encoded
 
 Program vt-channel
 ------------------
@@ -618,9 +624,10 @@ UTC recordings viewed at western longitudes.
 
 If multiple recorders are using the same file store with different filename
 prefixes then the `--match-name` option can be used to disentangle the
-different recorder streams. The match name can be changed at run-time by
-using the `--match-name` option on a `move` command sent to the command 
-socket.
+different recorder streams. Note that this is not the recommended because 
+it does not scale well and it can lead to crazy-slow startup while looking 
+for a matching file. The match name can be changed at run-time by using the
+`--match-name` option on a `move` command sent to the command socket.
 
 ### Usage
 
@@ -1030,6 +1037,7 @@ no motion. Repeat in different lighting conditions.
 
 ### Options
 
+	--log-threshold             threshold for logging motion detection events
 	--verbose                   verbose logging
 	--viewer                    run a viewer
 	--viewer-title=<title>      viewer window title
@@ -1038,8 +1046,8 @@ no motion. Repeat in different lighting conditions.
 	--event-channel=<channel>   publish analysis events to the named channel
 	--image-channel=<channel>   publish analysis images to the named channel
 	--recorder=<path>           recorder socket path
-	--squelch=<luma>            pixel change threshold (0 to 255) (default 50)
-	--threshold=<pixels>        pixel count threshold for changed pixels per image (default 100)
+	--squelch=<luma>            pixel value change threshold (0 to 255) (default 50)
+	--threshold=<pixels>        pixel count threshold in changed pixels per image (default 100)
 	--interval=<ms>             minimum time interval between comparisons (default 250)
 	--once                      exit if the watched channel is unavailable
 	--equalise                  histogram equalisation

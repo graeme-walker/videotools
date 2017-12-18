@@ -17,7 +17,7 @@ dnl
 dnl Process this file with autoconf to produce a configure script.
 dnl
 
-AC_INIT([videotools],[1.0],[],[videotools])
+AC_INIT([videotools],[1.0.1],[],[videotools])
 AC_CONFIG_SRCDIR([src/glib/gdef.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([no-define])

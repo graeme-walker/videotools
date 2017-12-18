@@ -476,6 +476,17 @@ std::string G::PublisherSubscription::info() const
 	return m_channel_info ;
 }
 
+unsigned int G::PublisherSubscription::age() const
+{
+	std::vector<char> buffer ;
+	G::EpochTime time( 0 ) ;
+	G::EpochTime now = G::DateTime::now() ;
+	if( const_cast<PublisherSubscription*>(this)->peek(buffer,nullptr,&time) && now > time )
+		return static_cast<unsigned int>((now-time).s) ;
+	else
+		return 0U ;
+}
+
 void G::PublisherSubscription::close()
 {
 	m_closed = true ;

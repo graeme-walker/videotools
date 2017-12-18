@@ -566,6 +566,10 @@ like "aplay".</p>
 <p>If the <code>--run-as</code> option is given then the external command runs with
 that account's user-id and group-id if possible.</p>
 
+<p>If you need pipes, backticks, file redirection, etc. in your external 
+command then add the "--shell" option. Awkward shell escapes can 
+avoided by using "--url-decode".</p>
+
 <h3>Usage</h3>
 
 <pre><code>vt-alarm [&lt;options&gt;] &lt;event-channel&gt; [&lt;command&gt; [&lt;arg&gt; ...]]
@@ -575,6 +579,8 @@ that account's user-id and group-id if possible.</p>
 
 <pre><code>--verbose             verbose logging
 --threshold=&lt;pixels&gt;  alarm threshold in pixels per image
+--shell               use '/bin/sh -c'
+--url-decode          treat the command as url-encoded
 </code></pre>
 
 <h2>Program vt-channel</h2>
@@ -673,9 +679,10 @@ UTC recordings viewed at western longitudes.</p>
 
 <p>If multiple recorders are using the same file store with different filename
 prefixes then the <code>--match-name</code> option can be used to disentangle the
-different recorder streams. The match name can be changed at run-time by
-using the <code>--match-name</code> option on a <code>move</code> command sent to the command 
-socket.</p>
+different recorder streams. Note that this is not the recommended because 
+it does not scale well and it can lead to crazy-slow startup while looking 
+for a matching file. The match name can be changed at run-time by using the
+<code>--match-name</code> option on a <code>move</code> command sent to the command socket.</p>
 
 <h3>Usage</h3>
 
@@ -1101,7 +1108,8 @@ no motion. Repeat in different lighting conditions.</p>
 
 <h3>Options</h3>
 
-<pre><code>--verbose                   verbose logging
+<pre><code>--log-threshold             threshold for logging motion detection events
+--verbose                   verbose logging
 --viewer                    run a viewer
 --viewer-title=&lt;title&gt;      viewer window title
 --mask=&lt;file&gt;               use a mask file
@@ -1109,8 +1117,8 @@ no motion. Repeat in different lighting conditions.</p>
 --event-channel=&lt;channel&gt;   publish analysis events to the named channel
 --image-channel=&lt;channel&gt;   publish analysis images to the named channel
 --recorder=&lt;path&gt;           recorder socket path
---squelch=&lt;luma&gt;            pixel change threshold (0 to 255) (default 50)
---threshold=&lt;pixels&gt;        pixel count threshold for changed pixels per image (default 100)
+--squelch=&lt;luma&gt;            pixel value change threshold (0 to 255) (default 50)
+--threshold=&lt;pixels&gt;        pixel count threshold in changed pixels per image (default 100)
 --interval=&lt;ms&gt;             minimum time interval between comparisons (default 250)
 --once                      exit if the watched channel is unavailable
 --equalise                  histogram equalisation

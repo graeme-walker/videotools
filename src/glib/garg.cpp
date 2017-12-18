@@ -97,9 +97,12 @@ G::Arg & G::Arg::operator=( const Arg & rhs )
 	return *this ;
 }
 
-G::StringArray G::Arg::array() const
+G::StringArray G::Arg::array( unsigned int shift ) const
 {
-	return m_array ;
+	G::StringArray result = m_array ;
+	while( !result.empty() && shift-- )
+		result.erase( result.begin() ) ;
+	return result ;
 }
 
 bool G::Arg::contains( const std::string & option , size_type option_args , bool cs ) const

@@ -77,7 +77,7 @@ public:
 
 private:
 	typedef G::DateTime::BrokenDownTime Tm ;
-	static constexpr std::time_t epoch_base = 946684800 ; // 2000
+	static g__constexpr std::time_t epoch_base = 946684800 ; // 2000
 	static unsigned int to_int( char a , char b , unsigned int error = 100U ) ;
 	static Tm bdt( const std::string & , size_t ) ;
 	static std::time_t daystamp( Tm , const Gv::Timezone & tz ) ;

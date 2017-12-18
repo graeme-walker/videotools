@@ -54,7 +54,7 @@ public:
 	G_EXCEPTION( CreateProcessError , "CreateProcess() error" ) ; // windows
 
 	NewProcess( const Path & exe , const StringArray & args , 
-		int capture_stdxxx = 1 , bool clean = true , bool strict_path = true ,
+		int capture_stdxxx = 1 , bool clean_environment = true , bool strict_path = true ,
 		Identity run_as_id = Identity::invalid() , bool strict_id = true ,
 		int exec_error_exit = 127 , 
 		const std::string & exec_error_format = std::string() ,
@@ -79,8 +79,8 @@ public:
 			///< allowed to be root. See Process::beOrdinaryForExec().
 			///< 
 			///< By default the child process runs with stdin and stderr attached to 
-			///< the null device and stdout attached to the internal pipe (see read()). 
-			///< The internal pipe is also used for error messages in case the exec()
+			///< the null device and stdout attached to the internal pipe. The 
+			///< internal pipe is also used for error messages in case the exec()
 			///< fails.
 			///< 
 			///< If the exec() fails then the 'exec_error_exit' argument is used as 
@@ -101,14 +101,6 @@ public:
 	NewProcessWaitFuture & wait() ;
 		///< Returns a reference to the WaitFuture sub-object so that the caller 
 		///< can wait for the child process to exit.
-
-	std::string read() ;
-		///< Returns the first bit of the child process's output stream,
-		///< or the exec() error message. The child process 'output' might
-		///< mean its stdout or its stderr, depending on the relevant
-		///< constructor option.
-		///< 
-		///< This should normally be called only after wait() has returned.
 
 	void kill() ;
 		///< Tries to kill the spawned process.
@@ -145,8 +137,9 @@ public:
 	explicit NewProcessWaitFuture( HANDLE hprocess ) ;
 		///< Constructor taking a process handle.
 
-	explicit NewProcessWaitFuture( pid_t pid ) ;
-		///< Constructor taking a posix process-id.
+	explicit NewProcessWaitFuture( pid_t pid , int fd = -1 ) ;
+		///< Constructor taking a posix process-id and optional
+		///< readable file descriptor.
 
 	NewProcessWaitFuture & run() ;
 		///< Waits for the process identified by the constructor
@@ -159,12 +152,19 @@ public:
 		///< by the main thread after the run() worker thread has 
 		///< signalled its completion.
 
+	std::string output() ;
+		///< Returns the first bit of child-process output. 
+		///< Used after get().
+
 private:
+	std::vector<char> m_buffer ;
 	HANDLE m_hprocess ; 
 	pid_t m_pid ;
+	int m_fd ;
 	int m_rc ;
 	int m_status ;
 	int m_error ;
+	int m_read_error ;
 } ;
 
 #endif

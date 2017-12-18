@@ -95,13 +95,16 @@ struct DiffParameters
 	unsigned int m_decoder_scale ;
 	unsigned int m_squelch ;
 	unsigned int m_threshold ;
+	int m_log_threshold ;
 	bool m_equalise ;
-	DiffParameters( G::EpochTime interval , unsigned int decoder_scale , unsigned int squelch , unsigned int threshold , bool equalise ) :
-		m_interval(interval) ,
-		m_decoder_scale(decoder_scale) ,
-		m_squelch(squelch) ,
-		m_threshold(threshold) ,
-		m_equalise(equalise)
+	DiffParameters( G::EpochTime interval , unsigned int decoder_scale , unsigned int squelch , 
+		unsigned int threshold , int log_threshold , bool equalise ) :
+			m_interval(interval) ,
+			m_decoder_scale(decoder_scale) ,
+			m_squelch(squelch) ,
+			m_threshold(threshold) ,
+			m_log_threshold(log_threshold) ,
+			m_equalise(equalise)
 	{
 	}
 } ;
@@ -171,7 +174,7 @@ public:
 		const std::string & recorder_socket_path , bool viewer , 
 		const std::string & viewer_title , int decoder_scale , const std::string & mask_file , 
 		bool once , unsigned int interval , unsigned int squelch , unsigned int threshold , 
-		bool equalise , bool plain , unsigned int repeat_timeout ) ;
+		int log_threshold , bool equalise , bool plain , unsigned int repeat_timeout ) ;
 
 private:
 	void emitImage( Gr::Image ) ;
@@ -217,10 +220,10 @@ Watcher::Watcher( const std::string & input_channel , const std::string & event_
 	const std::string & recorder_socket_path , bool viewer , 
 	const std::string & viewer_title , int decoder_scale , const std::string & mask_file , 
 	bool once , unsigned int interval , unsigned int squelch , unsigned int threshold ,
-	bool equalise , bool plain , unsigned int repeat_timeout ) :
+	int log_threshold , bool equalise , bool plain , unsigned int repeat_timeout ) :
 		Gv::CommandSocketMixin(command_socket) ,
 		m_comparator(mask_file,plain,equalise) ,
-		m_params(G::EpochTime(0,interval*1000U),decoder_scale,squelch,threshold,equalise) ,
+		m_params(G::EpochTime(0,interval*1000U),decoder_scale,squelch,threshold,log_threshold,equalise) ,
 		m_input_channel_name(input_channel) ,
 		m_input_channel(m_input_channel_name,!once/*lazy*/) ,
 		m_mask_file(mask_file) ,
@@ -348,7 +351,10 @@ void Watcher::emitImage( Gr::Image image )
 
 void Watcher::emitChangesEvent( G::EpochTime now , const DiffInfo & diff_info )
 {
-	if( diff_info.m_count >= m_params.m_threshold )
+	const bool emit_event = diff_info.m_count >= m_params.m_threshold ;
+	const bool emit_log = m_params.m_log_threshold >= 0 && diff_info.m_count >= static_cast<unsigned int>(m_params.m_log_threshold) ;
+
+	if( emit_event || emit_log )
 	{
 		std::ostringstream ss ;
 		ss
@@ -360,6 +366,7 @@ void Watcher::emitChangesEvent( G::EpochTime now , const DiffInfo & diff_info )
 			<< "'event': 'changes', "
 			<< "'squelch': " << m_params.m_squelch << ", "
 			<< "'threshold': " << m_params.m_threshold << ", "
+			<< "'equalise': " << static_cast<int>(m_params.m_equalise) << ", "
 			<< "'mask': '" << m_mask_file << "', "
 			<< "'masktime': '" << m_comparator.maskTime() << "', "
 			<< "'dx': " << diff_info.m_dx << ", "
@@ -367,7 +374,11 @@ void Watcher::emitChangesEvent( G::EpochTime now , const DiffInfo & diff_info )
 			<< "'count': " << diff_info.m_count << ", "
 			<< "'repeat': _""_repeat_""_ "
 			<< "}" ;
-		emitEventText( ss.str() ) ;
+		std::string s = ss.str() ;
+		if( emit_log )
+			G_LOG_S( "Watcher::emitChangesEvent: event: " << s ) ;
+		if( emit_event )
+			emitEventText( s ) ;
 	}
 }
 
@@ -642,6 +653,7 @@ int main( int argc, char ** argv )
 			"b!daemon!run in the background!!0!!2" "|"
 			"u!user!user to switch to when idle if run as root!!1!username!2" "|"
 			"P!pid-file!write process id to file!!1!path!2" "|"
+			"G!log-threshold!threshold for logging motion detection events!!0!!1" "|"
 			"v!verbose!verbose logging!!0!!1" "|"
 			"w!viewer!run a viewer!!0!!1" "|"
 			"t!viewer-title!viewer window title!!1!title!1" "|"
@@ -650,8 +662,8 @@ int main( int argc, char ** argv )
 			"E!event-channel!publish analysis events to the named channel!!1!channel!1" "|"
 			"c!image-channel!publish analysis images to the named channel!!1!channel!1" "|"
 			"R!recorder!recorder socket path!!1!path!1" "|"
-			"S!squelch!pixel change threshold! (0 to 255) (default 50)!1!luma!1" "|"
-			"A!threshold!pixel count threshold! for changed pixels per image (default 100)!1!pixels!1" "|"
+			"S!squelch!pixel value change threshold! (0 to 255) (default 50)!1!luma!1" "|"
+			"A!threshold!pixel count threshold! in changed pixels per image (default 100)!1!pixels!1" "|"
 			"i!interval!minimum time interval between comparisons! (default 250)!1!ms!1" "|"
 			"O!once!exit if the watched channel is unavailable!!0!!1" "|"
 			"Q!equalise!histogram equalisation!!0!!1" "|"
@@ -677,6 +689,7 @@ int main( int argc, char ** argv )
 			unsigned int interval = G::Str::toUInt( opt.value("interval","250") ) ;
 			unsigned int squelch = G::Str::toUInt( opt.value("squelch","50") ) ;
 			unsigned int threshold = G::Str::toUInt( opt.value("threshold","100") ) ;
+			int log_threshold = G::Str::toInt( opt.value("log-threshold","-1") ) ;
 			int scale = static_cast<int>( G::Str::toUInt(opt.value("scale","1")) ) ;
 			std::string command_socket = opt.value("command-socket","") ;
 			unsigned int repeat_timeout = G::Str::toUInt( opt.value("repeat-timeout","0") ) ;
@@ -687,7 +700,7 @@ int main( int argc, char ** argv )
 			Watcher watcher( input_channel_name , event_channel , images_channel ,
 				command_socket , recorder , viewer , viewer_title ,
 				scale , mask_file , once ,
-				interval , squelch , threshold , equalise , plain , 
+				interval , squelch , threshold , log_threshold , equalise , plain , 
 				repeat_timeout ) ;
 
 			startup.start() ;

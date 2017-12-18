@@ -34,7 +34,7 @@ namespace ColourSpace
 struct fp_1000
 {
 	typedef int int_t ;
-	static constexpr int scale__ = 1000 ;
+	static g__constexpr int scale__ = 1000 ;
 	explicit fp_1000( int i ) g__noexcept : m_i(int_t(i)*scale__) {}
 	fp_1000( int i_scaled , int /*private*/ ) g__noexcept : m_i(i_scaled) {}
 	static fp_1000 value__( int i_scaled ) g__noexcept { return fp_1000(i_scaled,0) ; }
@@ -73,7 +73,7 @@ inline bool operator>( const fp_1000 & a , const fp_1000 & b ) g__noexcept
 struct fp_256
 {
 	typedef int int_t ;
-	static constexpr int scale__ = 256 ;
+	static g__constexpr int scale__ = 256 ;
 	explicit fp_256( int i ) g__noexcept : m_i(i>0?(int_t(i)<<8):-(int_t(-i)<<8)) {}
 	fp_256( int i_scaled , int /*private*/ ) g__noexcept : m_i(i_scaled) {}
 	static fp_256 value__( int i_scaled ) g__noexcept { return fp_256(i_scaled,0) ; }
@@ -136,7 +136,7 @@ struct converter_fp
 	{
 		return fp_type::value__( i ) ; // assume scale factors match
 	}
-	static constexpr fp_type make_half() g__noexcept
+	static g__constexpr fp_type make_half() g__noexcept
 	{
 		return fp_type::value__( fp_type::scale__ >> 1 ) ;
 	}

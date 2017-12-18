@@ -24,6 +24,7 @@
 #include "gsleep.h"
 #include "gassert.h"
 #include "gsocket.h"
+#include "gmsg.h"
 #include "gcleanup.h"
 #include "gstr.h"
 #include "gdebug.h"
@@ -298,7 +299,7 @@ GNet::Socket::ssize_type GNet::StreamSocket::read( char * buf , size_type len )
 	if( len == 0 ) 
 		return 0 ;
 
-	ssize_type nread = ::recv( m_socket.fd() , buf , len , 0 ) ;
+	ssize_type nread = G::Msg::recv( m_socket.fd() , buf , len , 0 ) ;
 	if( sizeError(nread) )
 	{
 		saveReason() ;
@@ -356,15 +357,14 @@ void GNet::DatagramSocket::disconnect()
 GNet::Socket::ssize_type GNet::DatagramSocket::read( char * buf , size_type len )
 {
 	if( len == 0 ) return 0 ;
-	sockaddr sender ;
+	sockaddr sender ; // not used
 	socklen_t sender_len = sizeof(sender) ;
-	ssize_type nread = ::recvfrom( m_socket.fd() , buf , len , 0 , &sender , &sender_len ) ;
+	ssize_type nread = G::Msg::recvfrom( m_socket.fd() , buf , len , 0 , &sender , &sender_len ) ;
 	if( sizeError(nread) )
 	{
 		saveReason() ;
 		return -1 ;
 	}
-
 	return nread ;
 }
 
@@ -373,7 +373,7 @@ GNet::Socket::ssize_type GNet::DatagramSocket::readfrom( char * buf , size_type 
 	if( len == 0 ) return 0 ;
 	sockaddr sender ;
 	socklen_t sender_len = sizeof(sender) ;
-	ssize_type nread = ::recvfrom( m_socket.fd() , buf , len , 0 , &sender , &sender_len ) ;
+	ssize_type nread = G::Msg::recvfrom( m_socket.fd() , buf , len , 0 , &sender , &sender_len ) ;
 	if( sizeError(nread) )
 	{
 		saveReason() ;
@@ -387,7 +387,7 @@ GNet::Socket::ssize_type GNet::DatagramSocket::writeto( const char * buf , size_
 {
 	G_DEBUG( "GNet::DatagramSocket::write: sending " << len << " bytes to " << dst.displayString() ) ;
 
-	ssize_type nsent = ::sendto( m_socket.fd() , buf , len , 0 , dst.address() , dst.length() ) ;
+	ssize_type nsent = G::Msg::sendto( m_socket.fd() , buf , len , 0 , dst.address() , dst.length() ) ;
 	if( nsent < 0 )
 	{
 		saveReason() ;

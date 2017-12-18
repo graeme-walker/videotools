@@ -264,6 +264,10 @@ public:
 		///< so originally passed in to the Publisher constructor, plus some 
 		///< enrichment with "type" and "pid".
 
+	unsigned int age() const ;
+		///< Returns the age of the latest data in seconds, or zero.
+		///< The implementation uses peek().
+
 	void close() ;
 		///< Closes the channel subscription, releasing resources and
 		///< becoming inactive. The fd() method will return -1, 

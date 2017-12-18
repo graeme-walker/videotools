@@ -22,6 +22,8 @@
 #include "glimits.h"
 #include "gnewprocess.h"
 #include "gprocess.h"
+#include "genvironment.h"
+#include "gfile.h"
 #include "gidentity.h"
 #include "gassert.h"
 #include "gstr.h"
@@ -50,7 +52,6 @@ public:
 	void inParent() ; // reader
 	int fd() const ;
 	void dupTo( int stdxxx ) ; // onto stdout/stderr
-	std::string read() ; // size-limited
 	void write( const std::string & ) ;
 
 private:
@@ -65,15 +66,14 @@ class G::NewProcessImp
 {
 public:
 	NewProcessImp( const Path & exe , const StringArray & args , 
-		int stdxxx , bool clean , bool strict_path ,
+		int stdxxx , bool clean_env , bool strict_path ,
 		Identity run_as_id , bool strict_id ,
 		int exec_error_exit , const std::string & exec_error_format ,
 		std::string (*exec_error_format_fn)(std::string,int) ) ;
 
 	static std::pair<bool,pid_t> fork() ;
-	std::string read() ;
 	NewProcessWaitFuture & wait() ;
-	int run( const G::Path & , const StringArray & , bool clean , bool strict ) ;
+	int run( const G::Path & , const StringArray & , bool clean_env , bool strict ) ;
 	void kill() ;
 	static void printError( int , const std::string & s ) ;
 	std::string execErrorFormat( const std::string & format , int errno_ ) ;
@@ -91,11 +91,11 @@ private:
 // ==
 
 G::NewProcess::NewProcess( const Path & exe , const StringArray & args , 
-	int stdxxx , bool clean , bool strict_path ,
+	int stdxxx , bool clean_env , bool strict_path ,
 	Identity run_as_id , bool strict_id ,
 	int exec_error_exit , const std::string & exec_error_format ,
 	std::string (*exec_error_format_fn)(std::string,int) ) :
-		m_imp(new NewProcessImp(exe,args,stdxxx,clean,strict_path,
+		m_imp(new NewProcessImp(exe,args,stdxxx,clean_env,strict_path,
 			run_as_id,strict_id,exec_error_exit,exec_error_format,exec_error_format_fn) )
 {
 }
@@ -108,11 +108,6 @@ G::NewProcess::~NewProcess()
 G::NewProcessWaitFuture & G::NewProcess::wait()
 {
 	return m_imp->wait() ;
-}
-
-std::string G::NewProcess::read()
-{
-	return m_imp->read() ;
 }
 
 std::pair<bool,pid_t> G::NewProcess::fork()
@@ -128,7 +123,7 @@ void G::NewProcess::kill()
 // ==
 
 G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args , 
-	int stdxxx , bool clean , bool strict_path ,
+	int stdxxx , bool clean_env , bool strict_path ,
 	Identity run_as_id , bool strict_id ,
 	int exec_error_exit , const std::string & exec_error_format ,
 	std::string (*exec_error_format_fn)(std::string,int) ) :
@@ -165,8 +160,12 @@ G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args ,
 			Process::closeFilesExcept( m_pipe.fd() ) ;
 			m_pipe.dupTo( stdxxx ) ;
 
+			// restore SIGPIPE handling so that writing to
+			// the closed pipe should terminate the child
+			::signal( SIGPIPE , SIG_DFL ) ;
+
 			// exec -- doesnt normally return from run()
-			int e = run( exe , args , clean , strict_path ) ;
+			int e = run( exe , args , clean_env , strict_path ) ;
 
 			// execve() failed -- write an error message to stdxxx
 			if( exec_error_format_fn != 0 )
@@ -182,7 +181,7 @@ G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args ,
 	else
 	{
 		m_pipe.inParent() ;
-		m_wait_future = NewProcessWaitFuture( m_child_pid ) ;
+		m_wait_future = NewProcessWaitFuture( m_child_pid , m_pipe.fd() ) ;
 	}
 }
 
@@ -204,7 +203,7 @@ void G::NewProcessImp::printError( int stdxxx , const std::string & s )
 	G_IGNORE_RETURN( int , ::write( stdxxx , s.c_str() , s.length() ) ) ;
 }
 
-int G::NewProcessImp::run( const G::Path & exe , const StringArray & args , bool clean , bool strict )
+int G::NewProcessImp::run( const G::Path & exe , const StringArray & args , bool clean_env , bool strict )
 {
 	char * env[3U] ;
 	std::string path( "PATH=/usr/bin:/bin" ) ; // no "."
@@ -221,10 +220,8 @@ int G::NewProcessImp::run( const G::Path & exe , const StringArray & args , bool
 		argv[argc] = const_cast<char*>(arg_p->c_str()) ;
 	argv[argc] = nullptr ;
 
-	if( clean && strict )
+	if( clean_env )
 		::execve( exe.str().c_str() , argv , env ) ;
-	else if( clean )
-		::execvpe( exe.str().c_str() , argv , env ) ;
 	else if( strict )
 		::execv( exe.str().c_str() , argv ) ;
 	else
@@ -241,11 +238,6 @@ G::NewProcessWaitFuture & G::NewProcessImp::wait()
 	return m_wait_future ;
 }
 
-std::string G::NewProcessImp::read()
-{
-	return m_pipe.read() ;
-}
-
 void G::NewProcessImp::kill()
 {
 	if( m_child_pid != -1 )
@@ -258,8 +250,8 @@ void G::NewProcessImp::kill()
 std::string G::NewProcessImp::execErrorFormat( const std::string & format , int errno_ )
 {
 	std::string result = format ;
-	G::Str::replaceAll( result , "__errno__" , G::Str::fromInt(errno_) ) ;
-	G::Str::replaceAll( result , "__strerror__" , G::Process::strerror(errno_) ) ;
+	Str::replaceAll( result , "__errno__" , Str::fromInt(errno_) ) ;
+	Str::replaceAll( result , "__strerror__" , Process::strerror(errno_) ) ;
 	return result ;
 }
 
@@ -315,39 +307,68 @@ void G::Pipe::dupTo( int stdxxx )
 	}
 }
 
-std::string G::Pipe::read()
-{
-	// (this is called from the parent process, so no dup()ing shenanigans)
-	char buffer[limits::pipe_buffer] ;
-	ssize_t rc = m_fd == -1 ? 0 : ::read( m_fd , buffer , sizeof(buffer) ) ;
-	if( rc < 0 ) throw NewProcess::PipeError("read") ;
-    const size_t buffer_size = static_cast<size_t>(rc) ;
-    return std::string(buffer,buffer_size) ;
-}
-
 // ==
 
 G::NewProcessWaitFuture::NewProcessWaitFuture() :
 	m_hprocess(0) ,
 	m_pid(0) ,
+	m_fd(-1) ,
 	m_rc(0) ,
 	m_status(0) ,
-	m_error(0)
+	m_error(0) ,
+	m_read_error(0)
 {
 }
 
-G::NewProcessWaitFuture::NewProcessWaitFuture( pid_t pid ) :
+G::NewProcessWaitFuture::NewProcessWaitFuture( pid_t pid , int fd ) :
+	m_buffer(1024U) ,
 	m_hprocess(0) ,
 	m_pid(pid) ,
+	m_fd(fd) ,
 	m_rc(0) ,
 	m_status(0) ,
-	m_error(0)
+	m_error(0) ,
+	m_read_error(0)
 {
 }
 
 G::NewProcessWaitFuture & G::NewProcessWaitFuture::run()
 {
 	// (worker thread - keep it simple)
+	{
+		char more[64] ;
+		char * p = &m_buffer[0] ;
+		size_t space = m_buffer.size() ;
+		size_t size = 0U ;
+		while( m_fd >= 0 )
+		{
+			ssize_t n = ::read( m_fd , p?p:more , p?space:sizeof(more) ) ;
+			m_read_error = errno ;
+			if( n < 0 && m_error == EINTR )
+			{
+				; // keep reading
+			}
+			else if( n < 0 )
+			{
+				m_buffer.clear() ;
+				break ;
+			}
+			else if( n == 0 )
+			{
+				m_buffer.resize( size ) ;
+				m_read_error = 0 ;
+				break ;
+			}
+			else if( p )
+			{
+				p += n ;
+				size += n ;
+				space -= n ;
+				if( space == 0U )
+					p = nullptr ;
+			}
+		}
+	}
 	while( m_pid != 0 )
 	{
 		errno = 0 ;
@@ -363,12 +384,13 @@ G::NewProcessWaitFuture & G::NewProcessWaitFuture::run()
 
 int G::NewProcessWaitFuture::get()
 {
+	int result = 0 ;
 	if( m_pid != 0 )
 	{
-		if( m_error )
+		if( m_error || m_read_error )
 		{
 			std::ostringstream ss ;
-			ss << "errno=" << m_error ;
+			ss << "errno=" << (m_read_error?m_read_error:m_error) ;
 			throw NewProcess::WaitError( ss.str() ) ;
 		}
 		if( ! WIFEXITED(m_status) )
@@ -378,11 +400,16 @@ int G::NewProcessWaitFuture::get()
 			ss << "status=" << m_status ;
 			throw NewProcess::ChildError( ss.str() ) ;
 		}
-		return WEXITSTATUS(m_status) ;
+		result = WEXITSTATUS(m_status) ;
 	}
+	return result ;
+}
+
+std::string G::NewProcessWaitFuture::output()
+{
+	if( m_fd < 0 || m_read_error != 0 )
+		return std::string() ;
 	else
-	{
-		return 0 ;
-	}
+		return std::string( &m_buffer[0] , m_buffer.size() ) ;
 }
 

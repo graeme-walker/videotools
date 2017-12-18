@@ -46,9 +46,6 @@ protected:
 	std::string m_what ;
 
 public:
-	Exception() ;
-		///< Default constructor.
-
 	explicit Exception( const char * what ) ;
 		///< Constructor.
 

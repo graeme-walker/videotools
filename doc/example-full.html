@@ -199,12 +199,12 @@ var VT = {
 		var m_config = [
 			{ x : -70 , y : -25 , s : ">" , cmd : "play --forwards --sleep=50 --skip=1" } ,
 			{ x : -50 , y : -25 , s : ">>" , cmd : "play --forwards --sleep=50 --skip=50" } ,
-			{ x : -30 , y : -25 , s : ">|" , cmd : "; play --forwards ; next" } ,
+			{ x : -30 , y : -25 , s : ">|" , cmd : "play --forwards ; move next" } ,
 			{ x : -10 , y : -25 , s : ">>||" , cmd : "stop ; move last" } ,
 			{ x : "centre" , y : -25 , s : "o" , cmd : "stop" } ,
 			{ x : 70 , y : -25 , s : "<" , cmd : "play --backwards --sleep=50 --skip=1" } ,
 			{ x : 50 , y : -25 , s : "<<" , cmd : "play --backwards --sleep=50 --skip=50" } ,
-			{ x : 30 , y : -25 , s : "|<" , cmd : "play --backwards ; previous" } ,
+			{ x : 30 , y : -25 , s : "|<" , cmd : "play --backwards ; move previous" } ,
 			{ x : 10 , y : -25 , s : "||<<" , cmd : "stop ; move first" } ,
 			{ x : 0 , y : -12 , s : "R" , cmd : "ribbon %x" }
 		] ;

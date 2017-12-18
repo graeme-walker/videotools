@@ -120,7 +120,7 @@ namespace ColourSpace
 /// Does a cross-product using fp types.
 /// 
 template <typename Tmatrix, typename Tconverter, typename Ta, typename Ttriple>
-constexpr
+g__constexpr
 typename Tconverter::fp_type product( Ta a1 , Ta a2 , Ta a3 , Ttriple tfp ) g__noexcept
 {
 	return 
@@ -133,7 +133,7 @@ typename Tconverter::fp_type product( Ta a1 , Ta a2 , Ta a3 , Ttriple tfp ) g__n
 /// Uses the matrix given by the template parameter.
 /// 
 template <typename Tmatrix, typename Tconverter, typename Ttriple>
-constexpr
+g__constexpr
 typename Tconverter::fp_type y_imp( Ttriple rgb ) g__noexcept
 {
 	return product<Tmatrix,Tconverter>( Tmatrix::yr , Tmatrix::yg , Tmatrix::yb , rgb ) ;
@@ -143,7 +143,7 @@ typename Tconverter::fp_type y_imp( Ttriple rgb ) g__noexcept
 /// Uses the matrix given by the template parameter.
 /// 
 template <typename Tmatrix, typename Tconverter, typename Ttriple>
-constexpr
+g__constexpr
 typename Tconverter::fp_type u_imp( Ttriple rgb ) g__noexcept
 {
 	return product<Tmatrix,Tconverter>( Tmatrix::ur , Tmatrix::ug , Tmatrix::ub , rgb ) ;
@@ -153,7 +153,7 @@ typename Tconverter::fp_type u_imp( Ttriple rgb ) g__noexcept
 /// Uses the matrix given by the template parameter.
 /// 
 template <typename Tmatrix, typename Tconverter, typename Ttriple>
-constexpr
+g__constexpr
 typename Tconverter::fp_type v_imp( Ttriple rgb ) g__noexcept
 {
 	return product<Tmatrix,Tconverter>( Tmatrix::vr , Tmatrix::vg , Tmatrix::vb , rgb ) ;
@@ -163,7 +163,7 @@ typename Tconverter::fp_type v_imp( Ttriple rgb ) g__noexcept
 /// Uses the matrix given by the template parameter.
 /// 
 template <typename Tmatrix, typename Tconverter, typename Ttriple>
-constexpr
+g__constexpr
 typename Tconverter::fp_type r_imp( Ttriple yuv ) g__noexcept
 {
 	return product<Tmatrix,Tconverter>( Tmatrix::ry , Tmatrix::ru , Tmatrix::rv , yuv ) ;
@@ -173,7 +173,7 @@ typename Tconverter::fp_type r_imp( Ttriple yuv ) g__noexcept
 /// Uses the matrix given by the template parameter.
 /// 
 template <typename Tmatrix, typename Tconverter, typename Ttriple>
-constexpr
+g__constexpr
 typename Tconverter::fp_type g_imp( Ttriple yuv ) g__noexcept
 {
 	return product<Tmatrix,Tconverter>( Tmatrix::gy , Tmatrix::gu , Tmatrix::gv , yuv ) ;
@@ -183,7 +183,7 @@ typename Tconverter::fp_type g_imp( Ttriple yuv ) g__noexcept
 /// Uses the matrix given by the template parameter.
 /// 
 template <typename Tmatrix, typename Tconverter, typename Ttriple>
-constexpr
+g__constexpr
 typename Tconverter::fp_type b_imp( Ttriple yuv ) g__noexcept
 {
 	return product<Tmatrix,Tconverter>( Tmatrix::by , Tmatrix::bu , Tmatrix::bv , yuv ) ;
@@ -277,7 +277,7 @@ inline unsigned char y_int( unsigned char r , unsigned char g , unsigned char b 
 /// 
 inline unsigned char u_int( unsigned char r , unsigned char g , unsigned char b )
 {
-	static constexpr int bias = ( static_cast<int>(range_uv::max) + static_cast<int>(range_uv::min) ) / 2 ;
+	static g__constexpr int bias = ( static_cast<int>(range_uv::max) + static_cast<int>(range_uv::min) ) / 2 ;
 	const int u = table_u_from_r[r] + table_u_from_g[g] + table_u_from_b[b] ;
 	return clamp<range_uv,unsigned char>( u + bias ) ;
 }
@@ -286,7 +286,7 @@ inline unsigned char u_int( unsigned char r , unsigned char g , unsigned char b 
 /// 
 inline unsigned char v_int( unsigned char r , unsigned char g , unsigned char b )
 {
-	static constexpr int bias = ( static_cast<int>(range_uv::max) + static_cast<int>(range_uv::min) ) / 2 ;
+	static g__constexpr int bias = ( static_cast<int>(range_uv::max) + static_cast<int>(range_uv::min) ) / 2 ;
 	const int v = table_v_from_r[r] + table_v_from_g[g] + table_v_from_b[b] ;
 	return clamp<range_uv,unsigned char>( v + bias ) ;
 }
