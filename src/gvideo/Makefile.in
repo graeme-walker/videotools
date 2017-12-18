@@ -344,7 +344,7 @@ x_datadir = @x_datadir@
 x_docdir = @x_docdir@
 x_libexecdir = @x_libexecdir@
 noinst_LIBRARIES = libgvideo.a
-EXTRA_DIST = $(am__append_2) $(am__append_4) $(am__append_6) \
+EXTRA_DIST = doxygen.h $(am__append_2) $(am__append_4) $(am__append_6) \
 	$(am__append_8) $(am__append_10) $(am__append_12)
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/glib \

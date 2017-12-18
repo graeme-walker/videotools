@@ -18,7 +18,7 @@
 
 HTML = example.html example-full.html example-fetch.html example-refresh.html example-iframes.html
 
-EXTRA_DIST = abstract.txt doxygen.sh doxygen.cfg.in index.html readme.html doxygen-missing.html example.cfg example.pbm $(HTML)
+EXTRA_DIST = abstract.txt doxygen.sh doxygen.cfg.in index.html readme.html doxygen-missing.html example.cfg example.pbm videotools.css $(HTML)
 
 x_doc_DATA = index.html readme.html example.cfg
 x_data_DATA = example.pbm $(HTML)

@@ -18,7 +18,8 @@
 
 noinst_LIBRARIES = libgvideo.a
 
-EXTRA_DIST =
+EXTRA_DIST = \
+	doxygen.h
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/glib \

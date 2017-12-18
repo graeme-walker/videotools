@@ -558,6 +558,10 @@ like "aplay".
 If the `--run-as` option is given then the external command runs with
 that account's user-id and group-id if possible.
 
+If you need pipes, backticks, file redirection, etc. in your external 
+command then add the "--shell" option. Awkward shell escapes can 
+avoided by using "--url-decode".
+
 <h3>Usage</h3>
 <p><pre class="fragment">vt-alarm [&lt;options&gt;] &lt;event-channel&gt; [&lt;command&gt; [&lt;arg&gt; ...]]</pre></p>
 
@@ -565,6 +569,8 @@ that account's user-id and group-id if possible.
 <table class="options_">
     <tr><td>&ndash;&ndash;verbose</td><td>verbose logging</td></tr>
     <tr><td>&ndash;&ndash;threshold=&lt;pixels&gt;</td><td>alarm threshold in pixels per image</td></tr>
+    <tr><td>&ndash;&ndash;shell</td><td>use '/bin/sh -c'</td></tr>
+    <tr><td>&ndash;&ndash;url-decode</td><td>treat the command as url-encoded</td></tr>
 </table>
 
 \section channel channel
@@ -634,9 +640,10 @@ UTC recordings viewed at western longitudes.
 
 If multiple recorders are using the same file store with different filename
 prefixes then the `--match-name` option can be used to disentangle the
-different recorder streams. The match name can be changed at run-time by
-using the `--match-name` option on a `move` command sent to the command 
-socket.
+different recorder streams. Note that this is not the recommended because 
+it does not scale well and it can lead to crazy-slow startup while looking 
+for a matching file. The match name can be changed at run-time by using the
+`--match-name` option on a `move` command sent to the command socket.
 
 <h3>Usage</h3>
 <p><pre class="fragment">vt-fileplayer [&lt;options&gt;] &lt;directory&gt;</pre></p>
@@ -1070,6 +1077,7 @@ no motion. Repeat in different lighting conditions.
 
 <h3>Options</h3>
 <table class="options_">
+    <tr><td>&ndash;&ndash;log-threshold</td><td>threshold for logging motion detection events</td></tr>
     <tr><td>&ndash;&ndash;verbose</td><td>verbose logging</td></tr>
     <tr><td>&ndash;&ndash;viewer</td><td>run a viewer</td></tr>
     <tr><td>&ndash;&ndash;viewer-title=&lt;title&gt;</td><td>viewer window title</td></tr>
@@ -1078,8 +1086,8 @@ no motion. Repeat in different lighting conditions.
     <tr><td>&ndash;&ndash;event-channel=&lt;channel&gt;</td><td>publish analysis events to the named channel</td></tr>
     <tr><td>&ndash;&ndash;image-channel=&lt;channel&gt;</td><td>publish analysis images to the named channel</td></tr>
     <tr><td>&ndash;&ndash;recorder=&lt;path&gt;</td><td>recorder socket path</td></tr>
-    <tr><td>&ndash;&ndash;squelch=&lt;luma&gt;</td><td>pixel change threshold (0 to 255) (default 50)</td></tr>
-    <tr><td>&ndash;&ndash;threshold=&lt;pixels&gt;</td><td>pixel count threshold for changed pixels per image (default 100)</td></tr>
+    <tr><td>&ndash;&ndash;squelch=&lt;luma&gt;</td><td>pixel value change threshold (0 to 255) (default 50)</td></tr>
+    <tr><td>&ndash;&ndash;threshold=&lt;pixels&gt;</td><td>pixel count threshold in changed pixels per image (default 100)</td></tr>
     <tr><td>&ndash;&ndash;interval=&lt;ms&gt;</td><td>minimum time interval between comparisons (default 250)</td></tr>
     <tr><td>&ndash;&ndash;once</td><td>exit if the watched channel is unavailable</td></tr>
     <tr><td>&ndash;&ndash;equalise</td><td>histogram equalisation</td></tr>
