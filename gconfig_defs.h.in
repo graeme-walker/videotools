@@ -1,0 +1,154 @@
+/* gconfig_defs.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define true to use std::thread */
+#undef GCONFIG_ENABLE_STD_THREAD
+
+/* Define true to enable use of curses */
+#undef GCONFIG_HAVE_CURSES
+
+/* Define true if compiler supports c++ constexpr */
+#undef GCONFIG_HAVE_CXX_CONSTEXPR
+
+/* Define true if compiler has std::vector::emplace_back() */
+#undef GCONFIG_HAVE_CXX_EMPLACE
+
+/* Define true if compiler supports c++ final keyword */
+#undef GCONFIG_HAVE_CXX_FINAL
+
+/* Define true if compiler supports c++ noexcept */
+#undef GCONFIG_HAVE_CXX_NOEXCEPT
+
+/* Define true if compiler supports c++ nullptr */
+#undef GCONFIG_HAVE_CXX_NULLPTR
+
+/* Define true if compiler supports c++ override */
+#undef GCONFIG_HAVE_CXX_OVERRIDE
+
+/* Define true if compiler has std::shared_ptr */
+#undef GCONFIG_HAVE_CXX_SHARED_PTR
+
+/* Define true if compiler has std::thread */
+#undef GCONFIG_HAVE_CXX_STD_THREAD
+
+/* Define true if compiler has <type_traits> make_unsigned */
+#undef GCONFIG_HAVE_CXX_TYPE_TRAITS_MAKE_UNSIGNED
+
+/* Define true if errno_t type definition in error.h */
+#undef GCONFIG_HAVE_ERRNO_T
+
+/* Define true if fmemopen is available */
+#undef GCONFIG_HAVE_FMEMOPEN
+
+/* Define true if getenv_s in stdlib.h */
+#undef GCONFIG_HAVE_GETENV_S
+
+/* Define true if getpwnam in pwd.h */
+#undef GCONFIG_HAVE_GETPWNAM
+
+/* Define true if getpwnam_r in pwd.h */
+#undef GCONFIG_HAVE_GETPWNAM_R
+
+/* Define true if gmtime_r in time.h */
+#undef GCONFIG_HAVE_GMTIME_R
+
+/* Define true if gmtime_s in time.h */
+#undef GCONFIG_HAVE_GMTIME_S
+
+/* Define true to enable use of iconv */
+#undef GCONFIG_HAVE_ICONV
+
+/* Define true if if_nametoindex() is available */
+#undef GCONFIG_HAVE_IF_NAMETOINDEX
+
+/* Define true if inet_ntop() is available */
+#undef GCONFIG_HAVE_INET_NTOP
+
+/* Define true if inet_pton() is available */
+#undef GCONFIG_HAVE_INET_PTON
+
+/* Define true if ipv6 is available */
+#undef GCONFIG_HAVE_IPV6
+
+/* Define true if struct ip_mreqn is available */
+#undef GCONFIG_HAVE_IP_MREQN
+
+/* Define true to enable use of libav */
+#undef GCONFIG_HAVE_LIBAV
+
+/* Define true to enable use of libjpeg */
+#undef GCONFIG_HAVE_LIBJPEG
+
+/* Define true to enable use of libpng */
+#undef GCONFIG_HAVE_LIBPNG
+
+/* Define true to enable use of libv4l2 */
+#undef GCONFIG_HAVE_LIBV4L
+
+/* Define true if localtime_r in time.h */
+#undef GCONFIG_HAVE_LOCALTIME_R
+
+/* Define true if localtime_s in time.h */
+#undef GCONFIG_HAVE_LOCALTIME_S
+
+/* Define true if have OSX proc_pidpath() */
+#undef GCONFIG_HAVE_PROC_PIDPATH
+
+/* Define true if have readlink() in unistd.h */
+#undef GCONFIG_HAVE_READLINK
+
+/* Define true for posix semaphores */
+#undef GCONFIG_HAVE_SEM_INIT
+
+/* Define true if setgroups is available */
+#undef GCONFIG_HAVE_SETGROUPS
+
+/* Define true if sockaddr_in6 has a sin6_len member */
+#undef GCONFIG_HAVE_SIN6_LEN
+
+/* Define true if socklen_t type definition in sys/socket.h */
+#undef GCONFIG_HAVE_SOCKLEN_T
+
+/* Define true if ssize_t type is defined */
+#undef GCONFIG_HAVE_SSIZE_T
+
+/* Define true if statbuf has a st_atim.tv_nsec member */
+#undef GCONFIG_HAVE_STATBUF_NSEC
+
+/* Define true if strncpy_s in string.h */
+#undef GCONFIG_HAVE_STRNCPY_S
+
+/* Define true to enable use of video-for-linux */
+#undef GCONFIG_HAVE_V4L
+
+/* Define true to enable use of x11 xlib */
+#undef GCONFIG_HAVE_X11
+
+/* Define true to enable libav new decode functions */
+#undef GCONFIG_LIBAV_NEW_DECODE_FN
+
+/* Define true to enable libav new pixel descriptor */
+#undef GCONFIG_LIBAV_NEW_DESCRIPTOR
+
+/* Define true to enable libav new frame alloc function */
+#undef GCONFIG_LIBAV_NEW_FRAME_ALLOC_FN
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to enable debug messages at compile-time */
+#undef _DEBUG
